@@ -1,5 +1,9 @@
 # Aether Hub
 
+Local apps now live in `apps/<app-name>/` and are discovered automatically at startup and on window focus. See [apps/README.md](apps/README.md) for the manifest and folder format. `app-host/` contains the shared isolated offline runtime and window controls. The included Offline Demo runs without internet; other original catalog entries remain previews. This runtime serves static HTML projects, not backend processes, and never downloads dependencies automatically.
+
+Run `node node_modules/electron/cli.js scripts/apps-smoke.cjs` to verify discovery, local modules/fetch, offline enforcement, path boundaries, isolation, and return navigation. Only its uniquely named temporary test fixture is cleaned up; real apps and Offline Demo remain.
+
 Run `run-dev.bat` to open the Electron launcher.
 
 This first version recreates the reference as actual HTML controls and CSS layout. Games and tools currently open an explicitly labelled preview; they are not implemented games or connected services. Search, category filtering, local task storage, the clock, local audio playback, and native window controls work. Weather, progress, and recent activity use preview data.

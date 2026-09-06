@@ -25,13 +25,24 @@ document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = icon(el.da
 const nav = ['Home', ...CATEGORIES.slice(1), 'Library', 'Stats', 'Settings'];
 document.querySelector('#navigation').innerHTML = nav.map((name, i) => `${i === 7 ? '<div class="nav-divider"></div>' : ''}<button class="nav-item ${i === 0 ? 'active' : ''}" data-nav="${name}" aria-label="${name}" ${i === 0 ? 'aria-current="page"' : ''}>${icon(({Games:'game',Tools:'tools',Productivity:'productivity',Study:'study',Finance:'finance',Creative:'creative',Library:'library',Stats:'stats',Settings:'settings',Home:'home'})[name])}<span>${name}</span></button>`).join('');
 document.querySelector('#quick-launch').innerHTML = QUICK.map(item => `<button class="quick-card ${item.tone}" ${item.app ? `data-app="${item.app}"` : `data-category="${item.category}"`}>${appIcon(item.icon)}<strong>${item.name}</strong><small>${item.detail}</small></button>`).join('');
-function card(app, recent = false) { return `<button class="app-card ${app.tone}" data-app="${app.id}" aria-label="${app.name}, app preview">${recent ? '<span class="dots" aria-hidden="true">···</span>' : ''}${appIcon(app.icon)}<strong>${app.name}</strong><small>${recent ? app.recent : app.detail}</small></button>`; }
+const escapeHTML = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+function card(app, recent = false) { return `<button class="app-card ${app.tone}" data-app="${app.id}" aria-label="${escapeHTML(app.name)}, ${app.playable ? 'Open app' : 'app preview'}">${recent ? '<span class="dots" aria-hidden="true">···</span>' : ''}${app.cover ? `<img class="app-icon" src="${escapeHTML(app.cover)}" alt="">` : appIcon(app.icon)}<strong>${escapeHTML(app.name)}</strong><small>${escapeHTML(recent ? app.recent : app.detail)}</small></button>`; }
 document.querySelector('#recent').innerHTML = APPS.filter(app => app.recent).map(app => card(app, true)).join('');
 let category = 'All';
 let expanded = false;
+let localApps = [];
+let scanning = false;
+async function refreshApps() {
+  if (!window.launcher?.listApps || scanning) return;
+  scanning = true;
+  try { const result = await window.launcher.listApps(); localApps = result.apps; renderExplore(); if (result.errors.length) notify(result.errors.join(' / ')); }
+  catch { notify('无法读取 apps 目录。'); }
+  finally { scanning = false; }
+}
+window.addEventListener('focus', refreshApps);
 function renderExplore() {
   const query = document.querySelector('#search').value.trim().toLowerCase();
-  const apps = APPS.filter(app => (category === 'All' || app.category === category) && (!query || `${app.name} ${app.category} ${app.detail}`.toLowerCase().includes(query)) && (expanded || query || category !== 'All' || app.explore));
+  const apps = [...localApps, ...APPS].filter(app => (category === 'All' || app.category === category) && (!query || `${app.name} ${app.category} ${app.detail}`.toLowerCase().includes(query)) && (expanded || query || category !== 'All' || app.explore));
   document.querySelector('#explore').innerHTML = apps.map(app => card(app)).join('');
   document.querySelector('#empty').hidden = apps.length > 0;
   document.querySelector('#filters').innerHTML = CATEGORIES.map(name => `<button data-category="${name}" class="${category === name ? 'active' : ''}" aria-pressed="${category === name}">${name}</button>`).join('');
@@ -53,12 +64,16 @@ function details(name, description, image = 'grid') {
   document.querySelector('#dialog-icon').innerHTML = appIcon(image);
   dialog.showModal();
 }
-document.addEventListener('click', event => {
+document.addEventListener('click', async event => {
   const launch = event.target.closest('[data-app]');
   if (launch) {
-    const app = APPS.find(item => item.id === launch.dataset.app);
-    // Future functional modules enter through this single launch boundary.
-    details(app.name, app.detail, app.icon);
+    const app = [...localApps, ...APPS].find(item => item.id === launch.dataset.app);
+    if (app.playable) {
+      launch.disabled = true;
+      try { const result = await window.launcher.openApp(app.id); if (result.error) notify(result.error); }
+      catch { notify('应用启动失败，请重试。'); }
+      finally { launch.disabled = false; }
+    } else details(app.name, app.detail, app.icon);
   }
   const filter = event.target.closest('[data-category]');
   if (filter) setCategory(filter.dataset.category);
@@ -116,3 +131,4 @@ audioFile.onchange = async () => { const file = audioFile.files[0]; if (!file) r
 ['play','pause','ended'].forEach(name => audio.addEventListener(name, () => { document.querySelector('#play').innerHTML = icon(audio.paused ? 'play' : 'pause'); document.querySelector('#play').setAttribute('aria-label',audio.paused ? 'Play audio' : 'Pause audio'); }));
 document.querySelector('#volume').oninput = event => audio.volume = Number(event.target.value);
 renderExplore(); renderTasks(); updateClock(); setInterval(updateClock, 1000);
+refreshApps();

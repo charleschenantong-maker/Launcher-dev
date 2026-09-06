@@ -1,0 +1,7 @@
+{
+  "name": "Offline Demo",
+  "category": "Tools",
+  "description": "离线应用示例 · 点击运行",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}
