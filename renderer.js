@@ -19,83 +19,79 @@ const iconPaths = {
   exercise:'<path d="m8 8 8 8M5 4l-2 2 5 5 2-2zm11 9-2 2 5 5 2-2zM7 2 2 7m20 10-5 5"/>',
   coin:'<circle cx="12" cy="12" r="10"/><path d="M15 7c-8-3-9 5-3 5 6 0 5 8-3 5m3-12v14"/>'
 };
-function icon(name) { return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name] || iconPaths.grid || iconPaths.tools}</svg>`; }
+Object.assign(iconPaths, {
+  star:'<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/>',
+  heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
+  list:'<path d="M8 5h13M8 12h13M8 19h13M3 5h.1M3 12h.1M3 19h.1"/>',
+  grid:'<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/>'
+});
+function icon(name) { return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name] || iconPaths.grid}</svg>`; }
 function appIcon(name) { return `<img class="app-icon" src="assets/icons/${name}.svg" alt="">`; }
 document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = icon(el.dataset.icon));
-const nav = ['Home', ...CATEGORIES.slice(1), 'Library', 'Stats', 'Settings'];
-document.querySelector('#navigation').innerHTML = nav.map((name, i) => `${i === 7 ? '<div class="nav-divider"></div>' : ''}<button class="nav-item ${i === 0 ? 'active' : ''}" data-nav="${name}" aria-label="${name}" ${i === 0 ? 'aria-current="page"' : ''}>${icon(({Games:'game',Tools:'tools',Productivity:'productivity',Study:'study',Finance:'finance',Creative:'creative',Library:'library',Stats:'stats',Settings:'settings',Home:'home'})[name])}<span>${name}</span></button>`).join('');
-document.querySelector('#quick-launch').innerHTML = QUICK.map(item => `<button class="quick-card ${item.tone}" ${item.app ? `data-app="${item.app}"` : `data-category="${item.category}"`}>${appIcon(item.icon)}<strong>${item.name}</strong><small>${item.detail}</small></button>`).join('');
+const nav = ['Home', ...CATEGORIES.slice(1), 'Favorite', 'Library', 'Stats', 'Settings'];
+const navIcons = {Home:'home',Games:'game',Tools:'tools',Productivity:'productivity',Study:'study',Finance:'finance',Creative:'creative',Favorite:'star',Library:'library',Stats:'stats',Settings:'settings'};
+document.querySelector('#navigation').innerHTML = nav.map((name,i)=>`${i===8 ? '<div class="nav-divider"></div>' : ''}<button class="nav-item ${i===0?'active':''}" data-nav="${name}" aria-label="${name}" ${i===0?'aria-current="page"':''}>${icon(navIcons[name])}<span>${name}</span></button>`).join('');
 const escapeHTML = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-function card(app, recent = false) { return `<button class="app-card ${app.tone}" data-app="${app.id}" aria-label="${escapeHTML(app.name)}, ${app.playable ? 'Open app' : 'app preview'}">${recent ? '<span class="dots" aria-hidden="true">···</span>' : ''}${app.cover ? `<img class="app-icon" src="${escapeHTML(app.cover)}" alt="">` : appIcon(app.icon)}<strong>${escapeHTML(app.name)}</strong><small>${escapeHTML(recent ? app.recent : app.detail)}</small></button>`; }
-document.querySelector('#recent').innerHTML = APPS.filter(app => app.recent).map(app => card(app, true)).join('');
-let category = 'All';
-let expanded = false;
-let localApps = [];
-let scanning = false;
-async function refreshApps() {
-  if (!window.launcher?.listApps || scanning) return;
-  scanning = true;
-  try { const result = await window.launcher.listApps(); localApps = result.apps; renderExplore(); if (result.errors.length) notify(result.errors.join(' / ')); }
-  catch { notify('无法读取 apps 目录。'); }
-  finally { scanning = false; }
+let favorites = new Set(), recentIds = [];
+try { const saved=JSON.parse(localStorage.getItem('aether-favorites')); if(Array.isArray(saved))favorites=new Set(saved.filter(id=>typeof id==='string')); const recent=JSON.parse(localStorage.getItem('aether-recent')); if(Array.isArray(recent))recentIds=recent.filter(id=>typeof id==='string').slice(0,4); } catch {}
+let favoriteOnly=false, category='All', expanded=false, localApps=[], scanning=false;
+function card(app,recent=false) {
+  const subtitle=recent ? (app.recent ? app.recent.replace('Played','Last played').replace('Opened','Last opened') : 'Recently opened') + ' · ' + ({'2048':'Puzzle',tetris:'Arcade',planner:'Productivity'}[app.id] || app.category) : app.detail;
+  return `<article class="app-row ${app.tone}">${recent?'':`<button class="favorite-app" data-favorite="${app.id}" aria-label="Favorite ${escapeHTML(app.name)}" aria-pressed="${favorites.has(app.id)}">${icon('star')}</button>`}${app.cover?`<img class="app-icon" src="${escapeHTML(app.cover)}" alt="">`:appIcon(app.icon)}<div class="app-copy"><strong>${escapeHTML(app.name)}</strong><small>${escapeHTML(subtitle)}</small></div><button class="open-app" data-app="${app.id}" aria-label="Open ${escapeHTML(app.name)}">Open</button><button class="more-app" data-details="${app.id}" aria-label="Details for ${escapeHTML(app.name)}">···</button></article>`;
 }
-window.addEventListener('focus', refreshApps);
+function renderRecent() { const all=[...localApps,...APPS]; const ids=[...new Set([...recentIds,'2048','planner','tetris','pomodoro'])].filter(id=>all.some(app=>app.id===id)).slice(0,4); document.querySelector('#recent').innerHTML=ids.map(id=>card(all.find(app=>app.id===id),true)).join(''); }
 function renderExplore() {
-  const query = document.querySelector('#search').value.trim().toLowerCase();
-  const apps = [...localApps, ...APPS].filter(app => (category === 'All' || app.category === category) && (!query || `${app.name} ${app.category} ${app.detail}`.toLowerCase().includes(query)) && (expanded || query || category !== 'All' || app.explore));
-  document.querySelector('#explore').innerHTML = apps.map(app => card(app)).join('');
-  document.querySelector('#empty').hidden = apps.length > 0;
-  document.querySelector('#filters').innerHTML = CATEGORIES.map(name => `<button data-category="${name}" class="${category === name ? 'active' : ''}" aria-pressed="${category === name}">${name}</button>`).join('');
-  document.querySelector('#view-all').textContent = expanded ? 'Show Less' : 'View All';
+  const query=document.querySelector('#search').value.trim().toLowerCase();
+  const apps=[...localApps,...APPS].filter(app=>(!favoriteOnly||favorites.has(app.id))&&(category==='All'||app.category===category)&&(!query||`${app.name} ${app.category} ${app.detail}`.toLowerCase().includes(query))&&(favoriteOnly||expanded||query||category!=='All'||app.explore));
+  document.querySelector('#explore').innerHTML=apps.map(app=>card(app)).join('');
+  document.querySelector('#empty').hidden=apps.length>0;
+  document.querySelector('#empty').textContent=favoriteOnly?'No favorites yet. Select a star beside an app to save it here.':'No apps found. Try another search or category.';
+  document.querySelector('#filters').innerHTML=CATEGORIES.map(name=>`<button data-category="${name}" class="${category===name?'active':''}" aria-pressed="${category===name}">${name}</button>`).join('');
+  document.querySelector('#explore-title').innerHTML=(favoriteOnly?'Favorite':'All Tools &amp; Games')+' <span>›</span>';
 }
-function setCategory(name) {
-  category = name;
-  document.querySelectorAll('[data-nav]').forEach(el => {
-    const active = el.dataset.nav === (name === 'All' ? 'Home' : name);
-    el.classList.toggle('active', active);
-    if (active) el.setAttribute('aria-current','page'); else el.removeAttribute('aria-current');
-  });
-  renderExplore();
-}
-const dialog = document.querySelector('#app-dialog');
-function details(name, description, image = 'grid') {
-  document.querySelector('#dialog-title').textContent = name;
-  document.querySelector('#dialog-description').textContent = description;
-  document.querySelector('#dialog-icon').innerHTML = appIcon(image);
-  dialog.showModal();
-}
-document.addEventListener('click', async event => {
-  const launch = event.target.closest('[data-app]');
-  if (launch) {
-    const app = [...localApps, ...APPS].find(item => item.id === launch.dataset.app);
-    if (app.playable) {
-      launch.disabled = true;
-      try { const result = await window.launcher.openApp(app.id); if (result.error) notify(result.error); }
-      catch { notify('应用启动失败，请重试。'); }
-      finally { launch.disabled = false; }
-    } else details(app.name, app.detail, app.icon);
-  }
-  const filter = event.target.closest('[data-category]');
-  if (filter) setCategory(filter.dataset.category);
-  const navigation = event.target.closest('[data-nav]');
-  if (navigation) {
-    const name = navigation.dataset.nav;
-    if (name === 'Home') { expanded = false; document.querySelector('#search').value = ''; setCategory('All'); }
-    else if (CATEGORIES.includes(name)) setCategory(name);
-    else if (name === 'Library') { expanded = true; setCategory('All'); }
-    else details(name, name === 'Settings' ? '个性化设置将在后续接入。图片、应用目录与界面样式已独立存放。' : '活动统计将在连接真实应用后显示。');
-  }
-  const control = event.target.closest('[data-window]');
-  if (control) window.launcher?.controlWindow(control.dataset.window);
+function selectNav(name) { document.querySelectorAll('[data-nav]').forEach(button=>{const active=button.dataset.nav===name;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');}); }
+function setCategory(name) { favoriteOnly=false;category=name;selectNav(name==='All'?'Home':name);renderExplore(); }
+async function refreshApps() { if(!window.launcher?.listApps||scanning)return;scanning=true;try{const result=await window.launcher.listApps();localApps=result.apps;renderExplore();renderRecent();if(result.errors.length)notify(result.errors.join(' / '));}catch{notify('无法读取 apps 目录。');}finally{scanning=false;} }
+window.addEventListener('focus',refreshApps);
+const dialog=document.querySelector('#app-dialog');
+function details(name,description,image='grid',playable=false) { document.querySelector('#dialog-title').textContent=name;document.querySelector('#dialog-description').textContent=description;document.querySelector('#dialog-icon').innerHTML=appIcon(image);document.querySelector('.connection-status').textContent=playable?'本地离线应用 · 点击 Open 启动':'功能尚未接入 · 预留独立应用入口';dialog.showModal(); }
+document.addEventListener('click',async event=>{
+  const star=event.target.closest('[data-favorite]');
+  if(star){const id=star.dataset.favorite;favorites.has(id)?favorites.delete(id):favorites.add(id);try{localStorage.setItem('aether-favorites',JSON.stringify([...favorites]));}catch{notify('无法保存收藏。');}renderExplore();}
+  const view=event.target.closest('[data-view]');
+  if(view){document.querySelector('#explore').classList.toggle('grid-view',view.dataset.view==='grid');document.querySelectorAll('[data-view]').forEach(button=>button.setAttribute('aria-pressed',String(button===view)));}
+  const more=event.target.closest('[data-details]');
+  if(more){const app=[...localApps,...APPS].find(item=>item.id===more.dataset.details);details(app.name,app.detail,app.icon,app.playable);}
+  const launch=event.target.closest('[data-app]');
+  if(launch){const app=[...localApps,...APPS].find(item=>item.id===launch.dataset.app);if(app.playable){launch.disabled=true;try{const result=await window.launcher.openApp(app.id);if(result.error)notify(result.error);else{recentIds=[app.id,...recentIds.filter(id=>id!==app.id)].slice(0,4);try{localStorage.setItem('aether-recent',JSON.stringify(recentIds));}catch{notify('无法保存最近打开记录。');}renderRecent();}}catch{notify('应用启动失败，请重试。');}finally{launch.disabled=false;}}else details(app.name,app.detail,app.icon);}
+  const filter=event.target.closest('[data-category]');if(filter)setCategory(filter.dataset.category);
+  const navigation=event.target.closest('[data-nav]');
+  if(navigation){const name=navigation.dataset.nav;if(name==='Home'){expanded=false;document.querySelector('#search').value='';setCategory('All');}else if(CATEGORIES.includes(name))setCategory(name);else if(name==='Library'){expanded=true;setCategory('All');selectNav('Library');}else if(name==='Favorite'){category='All';favoriteOnly=true;selectNav(name);renderExplore();}else details(name,name==='Settings'?'个性化设置将在后续接入。':'活动统计将在连接真实应用后显示。');}
+  const control=event.target.closest('[data-window]');if(control)window.launcher?.controlWindow(control.dataset.window);
 });
-document.querySelector('#search').addEventListener('input', renderExplore);
-document.querySelector('#view-all').addEventListener('click', () => { expanded = !expanded; renderExplore(); });
-document.querySelector('#close-dialog').onclick = document.querySelector('#dialog-done').onclick = () => dialog.close();
-dialog.addEventListener('click', event => { if (event.target === dialog && !event.target.closest('button')) { const r = dialog.getBoundingClientRect(); if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.close(); } });
-document.querySelector('#profile').onclick = () => details('你好, Charles', 'Your own space to play, create, and improve.');
-document.addEventListener('keydown', event => { if (event.key === '/' && !dialog.open && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) { event.preventDefault(); document.querySelector('#search').focus(); } });
+document.querySelector('#search').addEventListener('input',renderExplore);
+document.querySelector('#close-dialog').onclick=document.querySelector('#dialog-done').onclick=()=>dialog.close();
+dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
+const appearance = document.querySelector('#appearance');
+function closeAppearance() { appearance.hidden = true; document.querySelector('#profile').setAttribute('aria-expanded','false'); }
+document.querySelector('#profile').onclick=()=>{appearance.hidden=!appearance.hidden;document.querySelector('#profile').setAttribute('aria-expanded',String(!appearance.hidden));};
+document.querySelectorAll('[data-theme-choice]').forEach(button=>{
+  button.setAttribute('aria-pressed',String(button.dataset.themeChoice === document.documentElement.dataset.theme));
+  button.onclick=async()=>{
+    const theme=button.dataset.themeChoice;
+    document.documentElement.dataset.theme=theme;
+    document.querySelectorAll('[data-theme-choice]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
+    try { localStorage.setItem('aether-theme',theme); } catch { notify('无法保存外观设置。'); }
+    try { await window.launcher?.setTheme(theme); } catch { notify('窗口材质切换失败，请重新打开启动台。'); }
+    closeAppearance();
+  };
+});
+document.addEventListener('click',event=>{if(!event.target.closest('#appearance,#profile'))closeAppearance();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!appearance.hidden){closeAppearance();document.querySelector('#profile').focus();}});
+document.addEventListener('keydown',event=>{if(!dialog.open&&((event.key.toLowerCase()==='k'&&(event.ctrlKey||event.metaKey))||(event.key==='/'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)))){event.preventDefault();document.querySelector('#search').focus();}});
 let toastTimer;
-function notify(message) { const toast = document.querySelector('#toast'); toast.textContent = message; toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.hidden = true, 3500); }
+function notify(message){const toast=document.querySelector('#toast');toast.textContent=message;toast.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.hidden=true,3500);}
+
 const initialTasks = [
   { name: 'Math past paper', time: '14:00 – 16:00', done: true },
   { name: 'Physics notes review', time: '16:30 – 17:30', done: false },
@@ -132,3 +128,10 @@ audioFile.onchange = async () => { const file = audioFile.files[0]; if (!file) r
 document.querySelector('#volume').oninput = event => audio.volume = Number(event.target.value);
 renderExplore(); renderTasks(); updateClock(); setInterval(updateClock, 1000);
 refreshApps();
+const seek = document.querySelector('#seek');
+const formatTime = seconds => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2,'0')}`;
+function updateAudioPosition() { const ready = Number.isFinite(audio.duration) && audio.duration > 0; seek.disabled = !ready; seek.value = ready ? audio.currentTime / audio.duration * 100 : 0; document.querySelector('#elapsed').textContent = formatTime(audio.currentTime || 0); document.querySelector('#remaining').textContent = ready ? '-' + formatTime(Math.max(0,audio.duration-audio.currentTime)) : '—'; }
+['timeupdate','loadedmetadata','emptied'].forEach(name=>audio.addEventListener(name,updateAudioPosition));
+seek.oninput = () => { if (Number.isFinite(audio.duration)) audio.currentTime = Number(seek.value)/100*audio.duration; };
+document.querySelector('#track-like').onclick = event => { const button = event.currentTarget; button.setAttribute('aria-pressed',String(button.getAttribute('aria-pressed') !== 'true')); };
+renderRecent();

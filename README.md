@@ -20,3 +20,7 @@ This first version recreates the reference as actual HTML controls and CSS layou
 All images are local and replaceable. The interface is not a flattened screenshot. Set `--wallpaper: none` in `styles.css` to remove the background imagery; the layout still works. Replace the avatar or individual icons at the same paths without touching app logic.
 
 Run `node node_modules/electron/cli.js scripts/smoke.cjs` for the Electron renderer smoke check. It checks search, categories, empty state, app details, task editing, safe text rendering, asset loading, and compact width. The screenshot is written to `output/launcher-preview.png`.
+
+The home screen uses Continue rows, a searchable app list, persistent Favorite stars, and list/grid views. Open the profile menu at the top right to select dark or light appearance; the choice is saved locally. Windows 11 22H2+ supplies the native Acrylic backdrop, with separate dark/light text and panel colors. Backdrop appearance follows the content behind the window and Windows transparency settings; no desktop wallpaper is embedded outside the hero image.
+
+`node node_modules/electron/cli.js scripts/backdrop-check.cjs` captures the real system-composited launcher over warm/cool test backgrounds and in light mode. `scripts/smoke.cjs` covers the revised list UI, favorites, view switching, theme colors, and existing interactions.

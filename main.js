@@ -1,11 +1,17 @@
-const { app, BrowserWindow, ipcMain, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, nativeTheme } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { scanApps } = require('./app-host/registry');
 const { openApp } = require('./app-host/runtime');
+nativeTheme.themeSource = 'dark';
 protocol.registerSchemesAsPrivileged([{scheme:'aether-app', privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true,stream:true}}]);
 const appsRoot = path.join(__dirname, 'apps');
 function isLauncher(event) { return event.senderFrame === event.sender.mainFrame && event.sender.getURL() === pathToFileURL(path.join(__dirname,'index.html')).href; }
+ipcMain.handle('set-theme', (event, theme) => {
+  if (!isLauncher(event) || !['dark','light'].includes(theme)) return false;
+  nativeTheme.themeSource = theme;
+  return true;
+});
 ipcMain.handle('apps-list', async event => {
   if (!isLauncher(event)) throw new Error('Invalid caller');
   const {apps,errors} = await scanApps(appsRoot);
@@ -24,12 +30,13 @@ ipcMain.handle('apps-open', async (event,id) => {
 
 function createWindow() {
   const window = new BrowserWindow({
-    width: 1500,
-    height: 980,
+    width: 1470,
+    height: 950,
     minWidth: 1000,
     minHeight: 720,
     frame: false,
-    backgroundColor: '#171d2b',
+    backgroundColor: '#00000000',
+    backgroundMaterial: 'acrylic',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
