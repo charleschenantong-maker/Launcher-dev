@@ -1,1 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><defs><linearGradient id="g" x2=".6" y2="1"><stop stop-color="#f7fbff"/><stop offset="1" stop-color="#c4d7ff"/></linearGradient></defs><rect x="9" y="18" width="62" height="54" rx="8" fill="url(#g)"/><path d="M9 26q0-8 8-8h46q8 0 8 8v8H9" fill="#539cef"/><path d="M23 12v13m34-13v13" stroke="#c9e3ff" stroke-width="5" stroke-linecap="round"/><g fill="#579af7"><rect x="19" y="41" width="10" height="10" rx="3"/><rect x="35" y="41" width="10" height="10" rx="3"/><rect x="19" y="56" width="10" height="10" rx="3"/><rect x="35" y="56" width="10" height="10" rx="3"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><defs><linearGradient id="g" x2="0.7" y2="1"><stop stop-color="#79b5ff"/><stop offset="1" stop-color="#3763c4"/></linearGradient></defs><rect x="1" y="1" width="78" height="78" rx="18" fill="url(#g)"/><rect x="1.5" y="1.5" width="77" height="77" rx="17.5" fill="none" stroke="#fff" stroke-opacity=".28"/><g transform="translate(16 16) scale(2)" fill="none" color="#fff" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4" />
+  <path d="M16 2v4" />
+  <rect width="18" height="18" x="3" y="4" rx="2" />
+  <path d="M3 10h18" />
+  <path d="M8 14h.01" />
+  <path d="M12 14h.01" />
+  <path d="M16 14h.01" />
+  <path d="M8 18h.01" />
+  <path d="M12 18h.01" />
+  <path d="M16 18h.01" /></g></svg>

@@ -1,0 +1,7 @@
+{
+  "name": "Chess",
+  "category": "Games",
+  "description": "Local two-player · Board flips after every move",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

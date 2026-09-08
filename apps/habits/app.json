@@ -1,0 +1,7 @@
+{
+  "name": "Habit Tracker",
+  "category": "Productivity",
+  "description": "Productivity",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

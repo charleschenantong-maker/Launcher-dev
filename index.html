@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob: aether-media:; object-src 'none'; base-uri 'none'">
     <title>Aether Hub</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="home.css">
-    <script src="theme.js"></script>
+    <script src="storage.js"></script><script src="theme.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#content">Skip to content</a>
@@ -23,7 +23,7 @@
         <nav id="navigation" aria-label="Main navigation"></nav>
         <div class="sidebar-bottom">
           <section class="music panel" aria-label="Music player">
-            <div class="track"><img src="assets/landscape.png" alt="Mountain lake album artwork"><div><strong id="track-name">Midnight</strong><small id="track-artist">Lane 8</small></div><button id="track-like" aria-label="Like track" aria-pressed="false"><span data-icon="heart"></span></button></div>
+            <div class="track"><img src="assets/landscape.png" alt="Mountain lake album artwork"><div><strong id="track-name">Choose music</strong><small id="track-artist">Local playlist</small></div><button id="track-like" aria-label="Like track" aria-pressed="false"><span data-icon="heart"></span></button></div>
             <input id="seek" type="range" min="0" max="100" value="0" aria-label="Audio position" disabled><div class="track-times"><span id="elapsed">0:00</span><span id="remaining">—</span></div>
             <div class="transport"><button id="previous" aria-label="Previous track" disabled>⏮</button><button id="play" aria-label="Choose local audio"><span data-icon="play"></span></button><button id="next" aria-label="Next track" disabled>⏭</button></div>
             <label class="volume"><span data-icon="volume"></span><input id="volume" type="range" min="0" max="1" step="0.01" value="0.4" aria-label="Volume"></label>
@@ -39,7 +39,7 @@
             <section class="explore-section"><div class="section-heading"><h2 id="explore-title">All Tools &amp; Games <span>›</span></h2><div id="filters" class="filters" aria-label="Filter apps"></div><div class="view-switch" aria-label="View mode"><button data-view="list" aria-label="List view" aria-pressed="true"><span data-icon="list"></span></button><button data-view="grid" aria-label="Grid view" aria-pressed="false"><span data-icon="grid"></span></button></div></div><div id="explore" class="app-list panel"></div><p class="empty" id="empty" hidden>No apps found. Try another search or category.</p></section>
           </div>
           <aside class="widgets" aria-label="Daily overview">
-            <section class="clock panel"><div><p id="date">Fri, 5 Sep 2026</p><time id="time">17:24</time></div><div class="weather" title="Weather preview data"><span class="cloud" data-icon="cloud"></span><div><small>Auckland</small><strong>16°C</strong><small>Mostly cloudy</small></div></div></section>
+            <section class="clock panel"><div><p id="date">Fri, 5 Sep 2026</p><time id="time">17:24</time></div><div class="weather" title="Weather for Auckland"><span class="cloud" data-icon="cloud"></span><div><small>Auckland</small><strong>16°C</strong><small>Mostly cloudy</small></div></div></section>
             <section class="quote panel"><span>“</span><blockquote>Discipline today<br>for a better tomorrow.</blockquote><i>—</i></section>
             <section class="today panel"><div class="widget-heading"><h3>Today</h3><button class="text-button" id="view-tasks">View All</button></div><div id="tasks"></div><form id="add-task"><span>＋</span><input aria-label="New task" placeholder="Add a task" maxlength="100" required><button type="submit" aria-label="Add task">↵</button></form></section>
             <section class="progress panel"><div class="widget-heading"><h3>Progress</h3><span class="period">This Week⌄</span></div><div class="progress-item"><span class="progress-icon blue" data-icon="book"></span><div><p>Study <small>6 / 10 h</small></p><progress value="6" max="10" aria-label="Study progress"></progress></div></div><div class="progress-item"><span class="progress-icon red" data-icon="exercise"></span><div><p>Exercise <small>2 / 4 h</small></p><progress value="2" max="4" aria-label="Exercise progress"></progress></div></div><div class="progress-item"><span class="progress-icon gold" data-icon="coin"></span><div><p>Savings <small>$128 / $500</small></p><progress value="128" max="500" aria-label="Savings progress"></progress></div></div><small class="demo-label">Preview data</small></section>
@@ -47,8 +47,8 @@
         </div>
       </main>
     </div>
-    <dialog id="app-dialog"><button id="close-dialog" aria-label="Close details">×</button><div id="dialog-icon"></div><p class="eyebrow">AETHER HUB · APP PREVIEW</p><h2 id="dialog-title"></h2><p id="dialog-description"></p><p class="connection-status">功能尚未接入 · 预留独立应用入口</p><button id="dialog-done">Back to launcher</button></dialog>
+    <dialog id="app-dialog"><button id="close-dialog" aria-label="Close details">×</button><div id="dialog-icon"></div><p class="eyebrow">AETHER HUB</p><h2 id="dialog-title"></h2><p id="dialog-description"></p><p class="connection-status">功能尚未接入 · 预留独立应用入口</p><button id="dialog-done">Back to launcher</button></dialog>
     <div id="toast" role="status" hidden></div>
-    <script src="catalog.js"></script><script src="renderer.js"></script>
+    <script src="catalog.js"></script><script src="renderer.js"></script><script src="hub-features.js"></script>
   </body>
 </html>

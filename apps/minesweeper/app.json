@@ -1,0 +1,7 @@
+{
+  "name": "Minesweeper",
+  "category": "Games",
+  "description": "Strategy · Game",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Tetris",
+  "category": "Games",
+  "description": "Arcade · Game",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

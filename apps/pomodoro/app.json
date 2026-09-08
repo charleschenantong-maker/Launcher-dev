@@ -1,0 +1,7 @@
+{
+  "name": "Pomodoro",
+  "category": "Productivity",
+  "description": "Make room for focused work.",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

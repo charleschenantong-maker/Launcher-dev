@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {scanApps,localFile} = require('../app-host/registry');
 const root = path.join(__dirname,'..','apps');
 const slug = `smoke-${process.pid}`;
+app.setPath('userData',path.join(__dirname,'../output/module-check-registry-'+process.pid));
 const folder = path.join(root,slug);
 const delay = ms => new Promise(resolve => setTimeout(resolve,ms));
 async function until(read) { for(let i=0;i<80;i++){ const result=await read(); if(result)return result; await delay(100); } throw new Error('Timed out'); }
@@ -38,17 +39,6 @@ app.whenReady().then(async () => {
     await host.webContents.executeJavaScript('document.querySelector("#back").click()');
     await until(()=>host.isDestroyed());
     assert.ok(!hub.isDestroyed());
-    await hub.webContents.executeJavaScript('refreshApps()');
-    await until(()=>hub.webContents.executeJavaScript('!!document.querySelector("[data-app=local-offline-demo]")'));
-    await hub.webContents.executeJavaScript('document.querySelector("[data-app=local-offline-demo]").click()');
-    const demo = await until(()=>webContents.getAllWebContents().find(c=>c.getURL().startsWith('aether-app://offline-demo/')));
-    await until(()=>demo.executeJavaScript('document.querySelector("#status")?.textContent.includes("JSON")').catch(()=>false));
-    await demo.executeJavaScript('document.querySelector("#reset").click();document.querySelector("#increment").click()');
-    assert.equal(await demo.executeJavaScript('document.querySelector("#count").textContent'),'1');
-    demo.reload();
-    await until(()=>demo.executeJavaScript('document.querySelector("#status")?.textContent.includes("JSON")').catch(()=>false));
-    assert.equal(await demo.executeJavaScript('document.querySelector("#count").textContent'),'1');
-    await demo.executeJavaScript('document.querySelector("#reset").click()');
     console.log('PASS: discovery, safe metadata, local modules/fetch, offline enforcement, path boundary, isolated app, interaction, return');
   } catch(error) {console.error(error);code=1;}
   finally {

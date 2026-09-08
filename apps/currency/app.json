@@ -1,0 +1,7 @@
+{
+  "name": "Currency Converter",
+  "category": "Finance",
+  "description": "Finance · Tool",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

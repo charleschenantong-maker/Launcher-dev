@@ -1,0 +1,7 @@
+{
+  "name": "Snake",
+  "category": "Games",
+  "description": "Classic · Game",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

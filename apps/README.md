@@ -33,4 +33,5 @@ apps/my-game/
 
 运行时禁止外网请求。请将 CDN 脚本、字体、图片、WASM 等依赖放入项目并改成本地引用；系统不会自动下载或转换依赖。React/Vue/Vite 项目需要先构建，把静态产物放入 `project/`，构建使用相对资源路径（如 Vite 的 `base: './'`），入口指向产物 HTML。当前不启动 Node/Python 后端，也不提供 SPA history 回退；SPA 使用 hash 路由。
 
-此目录保留了 `offline-demo`，可直接运行并作为新增应用的参考。已撤销的 HOTSWAP 实验不会自动恢复。
+当前包含 17 个真实游戏与工具；Offline Demo 已按要求移除，Hotswap 使用本地 Three.js 和字体。参考任一现有应用的 project/core.js 接入 appStore.read()/write(value)，即可将 JSON 进度同步保存到该应用独立的存档。appStore.theme()/onTheme(callback) 提供启动台明暗主题。只有 Currency 的 appStore.rates() 可以请求固定的汇率服务，其他应用保持离线。存档位于 userData/saves，与源文件分离；更新项目不会覆盖进度，但修改文件夹名会改变存档命名空间。
+

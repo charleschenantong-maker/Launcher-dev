@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172f38">
+<title>HOTSWAP — Keep the chaos.</title>
+<link rel="stylesheet" href="vendor/fonts.css"><link rel="stylesheet" href="style.css">
+
+
+
+</head>
+<body>
+<canvas id="view" aria-label="HOTSWAP 3D driving game"></canvas><div id="grain"></div><div id="damageEdge"></div><div id="flash"></div>
+<main id="title">
+ <div class="intro"><div class="eyebrow"><span class="liveDot"></span> AN ARCADE GETAWAY EXPERIMENT</div><h1 class="logo">HOT<span>SWAP</span></h1><h2 class="tagline">Lose the car.<br>Keep the chaos.</h2><p class="description">A whole city. A very bad idea. Jump between moving cars and leave your last ride on a collision course.</p><div class="selectionLabel">01 / CHOOSE YOUR FIRST GETAWAY</div><div class="cars">
+ <button class="carChoice" data-car="coupe" aria-pressed="true"><span class="carSilhouette" style="--car:#f7828c"></span><b>STINGER</b><small>FAST / PRECISE</small></button>
+ <button class="carChoice" data-car="hatch" aria-pressed="false"><span class="carSilhouette" style="--car:#a3ddd0"></span><b>ZIP</b><small>LIGHT / AGILE</small></button>
+ <button class="carChoice" data-car="muscle" aria-pressed="false"><span class="carSilhouette" style="--car:#f5d278"></span><b>BRUISER</b><small>HEAVY / HARD HITS</small></button>
+ <button class="carChoice" data-car="roadster" aria-pressed="false"><span class="carSilhouette" style="--car:#8fd4ff"></span><b>FLASH</b><small>VERY FAST / LIGHT</small></button>
+ <button class="carChoice" data-car="pickup" aria-pressed="false"><span class="carSilhouette" style="--car:#d8a26e"></span><b>MULE</b><small>TOUGH / TORQUEY</small></button></div>
+ <button id="start" class="primary" disabled>BUILDING THE CITY <span>↗</span></button><button id="historyBtn" class="smallButton titleHistory">RUN HISTORY · H</button><div id="titleBest" class="titleBest">HIGHEST SCORE / 0</div><div class="introControls"><span><span class="key">WASD</span> DRIVE</span><span><span class="key">E</span> HOLD TO SWAP</span><span><span class="key">SPACE</span> DRIFT</span><span><span class="key">SHIFT</span> TURBO</span><span><span class="key">V</span> VIEW</span></div></div><div class="titleStamp">WELCOME TO<b>PALM DISTRICT</b>NO CLEAN GETAWAYS.</div><div class="edition">VOL. 01 / INFINITE BAD DECISIONS</div>
+</main>
+<div id="hud" class="hidden"><div class="topbar"><div><div class="brand">HOTSWAP<small>PALM DISTRICT / LIVE PURSUIT</small></div><div class="scoreColumn"><div class="scoreLabel">CHAOS SCORE</div><div id="score" class="score">000000</div><div id="combo" class="combo">MAKE AN IMPRESSION.</div></div></div><div><div class="wanted"><div class="wantedText">DISPATCH / WANTED</div><div id="stars" class="stars">★ ★ ★ ★ ★</div><div id="pursuitText" class="wantedText">PATROL UNITS DEPLOYED</div></div><div class="topTools"><button id="viewMode" class="smallButton" type="button">COCKPIT · V</button><button id="mute" class="smallButton" aria-label="Toggle audio" aria-pressed="false">SOUND ON · M</button><button id="pauseBtn" class="smallButton">PAUSE · ESC</button></div></div></div>
+ <div class="bottom"><div class="vehiclePanel"><div class="micro">CURRENT GETAWAY</div><h3 id="carName">STINGER</h3><div class="bar"><i id="health"></i></div><div class="barMeta"><span>BODY INTEGRITY</span><span id="healthText">100%</span></div><div class="turboMeter"><div class="turboMeta"><span>TURBO SYSTEM</span><b id="turboValue">0%</b></div><div class="turboBar"><i id="turboProgress"></i></div><small id="turboHint" class="turboHint">SPEED · NEAR MISSES · SWAPS</small></div></div><div class="bottomRight"><canvas id="map" width="264" height="264" aria-label="City radar"></canvas><div class="speedPanel"><b id="speed">00</b><small>KM / H</small></div></div></div>
+ <div id="swapHUD"><div class="swapCard"><div class="swapTitle"><span class="key">E</span><span id="swapTitle">HOLD TO HOTSWAP</span></div><div id="swapInfo" class="swapInfo">PULL ALONGSIDE ANOTHER VEHICLE</div><div class="swapBar"><i id="swapProgress"></i></div></div><div class="swapHint">WASD / ARROWS · DRIVE &nbsp; SPACE · HANDBRAKE</div></div>
+</div>
+<div id="targetLabel" class="hidden"></div><div id="toast" role="status"><b></b><small></small></div><div id="arrest" class="hidden">BOXED IN — KEEP MOVING<div class="bar"><i></i></div></div><div id="callout">HOTSWAP</div>
+ <section id="pause" class="hidden"><div class="dialog"><div class="eyebrow">DISPATCH ON HOLD</div><h2>TAKE A BREATH.</h2><p>W / ↑ accelerate · S / ↓ brake and reverse<br>A D / ← → steer · Space handbrake · V change view<br>Hold E beside a car to transfer. Your abandoned ride repeats your last inputs for 2.6 seconds.<br>SHIFT activates turbo at 100% charge. Gain charge from speed above 54 km/h, near misses (+12%), hotswaps (+20%), wrecks (+8%), and echo hits (+8%). Turbo lasts 3.4 seconds, pauses charge gain, and ends when you hotswap.<br>Escape the police. Build a crash chain. Keep moving.</p><button id="resume" class="primary">BACK TO THE CHASE <span>↗</span></button></div></section>
+<section id="results" class="hidden"><div class="dialog"><div id="resultReason" class="eyebrow">VEHICLE TOTALLED</div><h2>END OF THE ROAD.</h2><div class="resultScore"><span id="finalScore">0</span><small id="bestScore">PERSONAL BEST / 0</small><small id="saveStatus" class="saveStatus"></small></div><div class="stats"><div><b id="statTime">0:00</b><span>TIME ON THE RUN</span></div><div><b id="statSwaps">0</b><span>HOTSWAPS</span></div><div><b id="statWrecks">0</b><span>WRECKS CAUSED</span></div><div><b id="statChain">0</b><span>LONGEST CHAIN</span></div><div><b id="statDistance">0</b><span>METRES DRIVEN</span></div><div><b id="statWanted">1</b><span>PEAK WANTED</span></div></div><button id="again" class="primary">RUN AGAIN <span>↗</span></button><button id="resultsHistory" class="secondary">VIEW RUN HISTORY</button><button id="change" class="secondary">CHANGE CAR</button></div></section>
+<section id="historyDialog" class="hidden" role="dialog" aria-modal="true" aria-labelledby="historyTitle"><div class="dialog historyDialog"><div class="eyebrow">ARCHIVE / THIS DEVICE</div><h2 id="historyTitle">RUN HISTORY.</h2><div id="historyBest" class="historyBest">HIGHEST SCORE / 0</div><p id="historyStatus" class="historyStatus">SAVED ON THIS DEVICE · LAST 12 RUNS</p><ol id="historyList" class="historyList"></ol><button id="closeHistory" class="secondary">CLOSE HISTORY</button></div></section>
+<section id="error" class="hidden"><div class="dialog"><h2>NO SIGNAL.</h2><p id="errorText">The graphics engine could not start. Check that hardware acceleration and WebGL are available.</p><button class="primary" onclick="location.reload()">RECONNECT <span>↗</span></button></div></section>
+<div id="loading" class="loading">ASSEMBLING A VERY BAD IDEA…</div>
+<script>
+window.gameReady=false;
+window.addEventListener('error',e=>{const panel=document.getElementById('error'),text=document.getElementById('errorText');if(text&&e.message)text.textContent='Runtime graphics error: '+e.message;if(panel)panel.classList.remove('hidden');document.getElementById('loading')?.classList.add('hidden');});
+setTimeout(()=>{if(!window.gameReady){document.getElementById('error').classList.remove('hidden');document.getElementById('loading').classList.add('hidden');}},18000);
+</script>
+<script type="module" src="main.js"></script>
+</body>
+</html>

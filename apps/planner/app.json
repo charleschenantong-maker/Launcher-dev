@@ -1,0 +1,7 @@
+{
+  "name": "Study Planner",
+  "category": "Study",
+  "description": "Plan your next small step.",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

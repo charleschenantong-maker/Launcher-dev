@@ -13,8 +13,8 @@ async function localFile(root, relative) {
 async function scanApps(root) {
   await fs.mkdir(root, { recursive: true });
   const apps = [], errors = [];
-  for (const dir of await fs.readdir(root, { withFileTypes: true })) {
-    if (!dir.isDirectory() || dir.name.startsWith('.')) continue;
+  await Promise.all((await fs.readdir(root, { withFileTypes: true })).map(async dir => {
+    if (!dir.isDirectory() || dir.name.startsWith('.')) return;
     try {
       if (!/^[a-z0-9][a-z0-9-]*$/.test(dir.name)) throw new Error('文件夹名只支持小写字母、数字和连字符');
       const folder = path.join(root, dir.name);
@@ -32,7 +32,8 @@ async function scanApps(root) {
       }
       apps.push({ id: `local-${dir.name}`, slug: dir.name, name: manifest.name.slice(0,100), detail: typeof manifest.description === 'string' ? manifest.description.slice(0,200) : 'Local app · Offline', category: ['Games','Tools','Productivity','Study','Finance','Creative'].includes(manifest.category) ? manifest.category : 'Tools', entry, folder, cover, icon:'grid', tone:'teal', playable:true, explore:true });
     } catch (error) { errors.push(`${dir.name}: ${error.message}`); }
-  }
+  }));
+  apps.sort((a,b)=>a.slug.localeCompare(b.slug));
   return { apps, errors };
 }
 module.exports = { scanApps, localFile };

@@ -1,0 +1,7 @@
+{
+  "name": "Pac-Man",
+  "category": "Games",
+  "description": "Arcade · Easy, Medium & Hard",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

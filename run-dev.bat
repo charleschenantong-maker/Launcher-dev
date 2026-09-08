@@ -3,7 +3,7 @@ cd /d "%~dp0"
 set "NODE_EXE=C:\Users\user2\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
 set "PNPM_CLI=C:\Users\user2\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\pnpm\bin\pnpm.cjs"
 
-if not exist "node_modules\electron\cli.js" (
+if not exist "node_modules\electron\dist\electron.exe" (
   echo Installing Electron...
   "%NODE_EXE%" "%PNPM_CLI%" install
   if errorlevel 1 (
@@ -12,4 +12,4 @@ if not exist "node_modules\electron\cli.js" (
   )
 )
 
-"%NODE_EXE%" "node_modules\electron\cli.js" . || pause
+start "" "%~dp0node_modules\electron\dist\electron.exe" "%~dp0."

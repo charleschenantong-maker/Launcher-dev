@@ -1,0 +1,7 @@
+{
+  "name": "Savings Tracker",
+  "category": "Finance",
+  "description": "A little closer to your goals.",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

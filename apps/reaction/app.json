@@ -1,0 +1,7 @@
+{
+  "name": "Reaction Time Test",
+  "category": "Games",
+  "description": "Reflexes · Track your personal best",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

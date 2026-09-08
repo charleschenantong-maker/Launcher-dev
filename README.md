@@ -1,26 +1,20 @@
-# Aether Hub
+# Aether Hub 1.2
 
-Local apps now live in `apps/<app-name>/` and are discovered automatically at startup and on window focus. See [apps/README.md](apps/README.md) for the manifest and folder format. `app-host/` contains the shared isolated offline runtime and window controls. The included Offline Demo runs without internet; other original catalog entries remain previews. This runtime serves static HTML projects, not backend processes, and never downloads dependencies automatically.
+Run `run-dev.bat` to open the local Electron launcher.
 
-Run `node node_modules/electron/cli.js scripts/apps-smoke.cjs` to verify discovery, local modules/fetch, offline enforcement, path boundaries, isolation, and return navigation. Only its uniquely named temporary test fixture is cleaned up; real apps and Offline Demo remain.
+17 working apps: 2048, Study Planner, Savings Tracker, Tetris, Pomodoro, Minesweeper, Snake, Sudoku, NotePad, Habit Tracker, Currency Converter, Breakout, Hotswap, Wordle, Chess, Pac-Man and Reaction Time Test. Chess supports two players, automatic board rotation, checkmate notices and captured material. Applicable games have Easy / Medium / Hard choices.
 
-Run `run-dev.bat` to open the Electron launcher.
+Favorites, tasks, settings, activity, local music position and app progress are saved under Electron's userData `saves/` directory (shown in Settings). Writes are atomic with a backup; closing and reopening the launcher preserves progress. Continuous games checkpoint every 250–500 ms and music every second, so forced termination can lose that small interval. Games resume paused.
 
-This first version recreates the reference as actual HTML controls and CSS layout. Games and tools currently open an explicitly labelled preview; they are not implemented games or connected services. Search, category filtering, local task storage, the clock, local audio playback, and native window controls work. Weather, progress, and recent activity use preview data.
+Only weather (Open-Meteo) and reference exchange rates (Frankfurter) use the network. Game engines, fonts, word lists and rules are bundled locally with their licenses. Offline Demo has been removed at the user's request. The supplied Hotswap source outside this repository is unchanged.
 
-- `main.js`: Electron window and restricted window-control IPC.
-- `preload.js`: isolated, allowlisted window-control bridge.
-- `index.html` / `styles.css`: semantic layout and appearance.
-- `catalog.js`: app IDs and metadata; add future apps here.
-- `renderer.js`: UI behavior; `data-app` routes to the app launch boundary.
-- `assets/landscape.png`: independent AI-generated background and music artwork.
-- `assets/avatar.svg`: independent editable avatar illustration.
-- `assets/icons/*.svg`: independent app icons, editable directly or regenerated with `node scripts/generate-icons.js`.
+Each app is a self-contained `apps/<slug>/` folder. See [apps/README.md](apps/README.md). The isolated runtime in `app-host/` denies external requests and cross-app file access. No app gets Node access.
 
-All images are local and replaceable. The interface is not a flattened screenshot. Set `--wallpaper: none` in `styles.css` to remove the background imagery; the layout still works. Replace the avatar or individual icons at the same paths without touching app logic.
+Dark/light themes use Windows native Acrylic. Images remain replaceable assets; SVG icon corners are transparent. Settings/Stats dialogs scroll within the window, and list/grid views adapt to restored windows. Startup opens Electron directly and shows the launcher at its first ready frame; app windows load shell and content concurrently without waiting on hidden animation frames.
 
-Run `node node_modules/electron/cli.js scripts/smoke.cjs` for the Electron renderer smoke check. It checks search, categories, empty state, app details, task editing, safe text rendering, asset loading, and compact width. The screenshot is written to `output/launcher-preview.png`.
+Checks:
+- `node scripts/check-modules.cjs`: all 17 apps, isolation, forced-process-termination and save restoration.
+- `node node_modules/electron/cli.js scripts/ui-check.cjs`: real window screenshots, app opening times, compact dialogs/grid, chess captures/checkmate.
+- `node node_modules/electron/cli.js scripts/apps-smoke.cjs`: manifests and local protocol boundaries.
 
-The home screen uses Continue rows, a searchable app list, persistent Favorite stars, and list/grid views. Open the profile menu at the top right to select dark or light appearance; the choice is saved locally. Windows 11 22H2+ supplies the native Acrylic backdrop, with separate dark/light text and panel colors. Backdrop appearance follows the content behind the window and Windows transparency settings; no desktop wallpaper is embedded outside the hero image.
-
-`node node_modules/electron/cli.js scripts/backdrop-check.cjs` captures the real system-composited launcher over warm/cool test backgrounds and in light mode. `scripts/smoke.cjs` covers the revised list UI, favorites, view switching, theme colors, and existing interactions.
+`node scripts/generate-icons.js` regenerates icons from local Lucide SVG sources in `assets/ui/` and custom game glyphs. Local third-party licenses accompany Lucide, Three.js, fonts, chess.js and the Wordle dictionary.

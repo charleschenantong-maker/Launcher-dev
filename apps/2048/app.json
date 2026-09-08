@@ -1,0 +1,7 @@
+{
+  "name": "2048",
+  "category": "Games",
+  "description": "Puzzle · Game",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

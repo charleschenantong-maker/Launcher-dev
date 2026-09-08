@@ -1,0 +1,7 @@
+{
+  "name": "HOTSWAP",
+  "category": "Games",
+  "description": "Arcade getaway · Swap cars. Keep the chaos.",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

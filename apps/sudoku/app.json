@@ -1,0 +1,7 @@
+{
+  "name": "Sudoku",
+  "category": "Games",
+  "description": "Logic · Game",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

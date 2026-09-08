@@ -1,0 +1,10 @@
+load({habits:[]});
+shell('<section class="panel"><h2>Small steps, every day</h2><form id="add"><input name="name" placeholder="Habit name" required maxlength="100" aria-label="Habit name"><select name="kind" aria-label="Habit category"><option value="general">General</option><option value="exercise">Exercise</option></select><label>Minutes <input name="minutes" type="number" min="1" max="1440" value="30" required></label><button>Add habit</button></form><label>Check-in date <input id="date" type="date"></label><div id="list"></div></section>');
+$('#date').value=day();$('#date').max=day();
+function streak(h){let count=0,d=new Date($('#date').value+'T12:00:00');while(h.days.includes(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))){count++;d.setDate(d.getDate()-1);}return count;}
+function render(){$('#list').innerHTML=state.habits.map(h=>`<div class="row"><input type="checkbox" data-check="${h.id}" ${h.days.includes($('#date').value)?'checked':''} aria-label="Complete ${esc(h.name)}"><div class="grow"><strong>${esc(h.name)}</strong><div class="muted">${h.kind==='exercise'?'Exercise · ':''}${h.minutes} min · ${h.days.length} check-ins · ${streak(h)} day streak ending on selected date</div></div><button data-delete="${h.id}" aria-label="Delete habit">×</button></div>`).join('')||'<p>Add your first habit. Check-ins and streaks stay on this computer.</p>';}
+$('#add').onsubmit=e=>{e.preventDefault();const f=e.target;state.habits.push({id:crypto.randomUUID(),name:f.elements.name.value.trim(),kind:f.elements.kind.value,minutes:Number(f.elements.minutes.value),days:[]});save();f.elements.name.value='';render();};
+$('#date').onchange=render;
+$('#list').onchange=e=>{const h=state.habits.find(h=>h.id===e.target.dataset.check);const date=$('#date').value;if(h&&date&&date<=day()){h.days=e.target.checked?[...new Set([...h.days,date])]:h.days.filter(d=>d!==date);save();render();}};
+$('#list').onclick=e=>{const b=e.target.closest('[data-delete]');if(b&&confirm('Delete this habit and its check-ins?')){state.habits=state.habits.filter(h=>h.id!==b.dataset.delete);save();render();}};
+render();
