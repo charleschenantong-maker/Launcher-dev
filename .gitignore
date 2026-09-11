@@ -1,4 +1,8 @@
 node_modules/
+.pnpm-store/
 out/
 dist/
 output/module-check-*/
+.tauri-dist/
+src-tauri/target/
+src-tauri/target-fog/

@@ -60,7 +60,7 @@ function renderExplore() {
   document.querySelector('#filters').innerHTML=CATEGORIES.map(name=>`<button data-category="${name}" class="${category===name?'active':''}" aria-pressed="${category===name}">${name}</button>`).join('');
   document.querySelector('#explore-title').innerHTML=(favoriteOnly?'Favorite':'All Tools &amp; Games')+' <span>›</span>';
 }
-function selectNav(name) { document.querySelectorAll('[data-nav]').forEach(button=>{const active=button.dataset.nav===name;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');}); }
+function selectNav(name) { document.querySelector('#page-title').textContent=name;document.querySelectorAll('[data-nav]').forEach(button=>{const active=button.dataset.nav===name;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');}); }
 function setCategory(name) { favoriteOnly=false;category=name;selectNav(name==='All'?'Home':name);renderExplore(); }
 async function refreshApps() { if(!window.launcher?.listApps||scanning)return;scanning=true;try{const result=await window.launcher.listApps();localApps=result.apps.filter(app=>!APPS.some(builtin=>builtin.id===app.slug));for(const builtin of APPS){const installed=result.apps.find(app=>app.slug===builtin.id);if(installed){builtin.playable=true;builtin.launchId=installed.id;}}renderExplore();renderRecent();if(result.errors.length)notify(result.errors.join(' / '));}catch{notify('无法读取 apps 目录。');}finally{scanning=false;} }
 window.addEventListener('focus',refreshApps);

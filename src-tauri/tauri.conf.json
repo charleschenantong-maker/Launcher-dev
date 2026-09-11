@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Aether Hub",
+  "version": "0.1.0",
+  "identifier": "com.aether.hub",
+  "build": {
+    "beforeDevCommand": "node scripts/prepare-tauri-assets.cjs",
+    "beforeBuildCommand": "node scripts/prepare-tauri-assets.cjs",
+    "frontendDist": "../.tauri-dist"
+  },
+  "app": {
+    "windows": [],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.ico"],
+    "resources": { "../apps/": "apps/" }
+  }
+}

@@ -2,11 +2,12 @@
   "name": "launcher",
   "version": "0.1.0",
   "private": true,
-  "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "node node_modules/@tauri-apps/cli/tauri.js dev",
+    "build": "node node_modules/@tauri-apps/cli/tauri.js build",
+    "stage": "node scripts/prepare-tauri-assets.cjs"
   },
   "devDependencies": {
-    "electron": "^40.0.0"
+    "@tauri-apps/cli": "^2.8.5"
   }
 }

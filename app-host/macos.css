@@ -1,0 +1,52 @@
+/* Shared native-sized controls for the bundled apps; game boards keep their rules. */
+body:has(> header #save-status) {
+  --muted: #a9a9b2;
+  --line: #ffffff16;
+  --panel: #2b2b2f;
+  --field: #ffffff09;
+  --app-canvas: #202023;
+  --app-text: #f2f2f7;
+  --app-control: #ffffff13;
+  --app-accent: #6cafff;
+  --app-fog: #303035dc;
+  font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
+  color: var(--app-text);
+  background: var(--app-canvas);
+
+  & > header { padding: 26px 32px 20px; gap: 12px; border-color: var(--line); }
+  & > header img { width: 42px; height: 42px; border-radius: 11px; }
+  & > header h1 { font-size: 24px; font-weight: 650; letter-spacing: -.7px; }
+  & > header .muted { font-size: 11px; }
+  & > header small { font-size: 10px; }
+  & > main { padding-top: 18px; }
+  & p, & .muted { color: var(--muted); }
+  & .panel { background: var(--panel); border: 0; border-radius: 18px; box-shadow: 0 2px 5px #00000005; }
+  & .toolbar { position: sticky; top: 12px; z-index: 2; padding: 10px 13px; gap: 10px; border-radius: 18px; background: var(--app-fog); border: 1px solid var(--line); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 4px 16px #0000000c; }
+  & :is(.toolbar,form,.controls,.row,.panel) button:not(.cell):not([data-square]) { color: var(--app-text); border: 0; border-radius: 8px; background: var(--app-control); box-shadow: 0 2px 5px #00000012; padding: 6px 13px; font-size: 12px; min-height: 30px; }
+  & :is(.toolbar,form,.controls,.row,.panel) button:not(.cell):not([data-square]):hover:not(:disabled) { background: color-mix(in srgb,var(--app-control) 70%,var(--app-accent) 15%); }
+  & form button[type=submit] { color: #fff; background: #007aff; border-color: #ffffff1a; }
+  & :is(input,textarea,select):not(.cell):not([type=checkbox]):not([type=range]) { color: var(--app-text); background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 13px; }
+  & select option { color: var(--app-text); background: var(--app-canvas); }
+  & textarea { line-height: 1.7; }
+  & input[type=checkbox], & progress { accent-color: var(--app-accent); }
+  & .row { border-color: var(--line); }
+  & :is(button,input,textarea,select):focus-visible { outline: 3px solid color-mix(in srgb,var(--app-accent) 65%,transparent); outline-offset: 3px; }
+  & button:active:not(:disabled):not(.cell):not([data-square]) { transform: scale(.98); }
+}
+:root[data-theme=light] body:has(> header #save-status) {
+  --muted: #717177;
+  --line: #17172016;
+  --panel: #fff;
+  --field: #ffffffd9;
+  --app-canvas: #f6f6f8;
+  --app-text: #242426;
+  --app-control: #fff;
+  --app-accent: #007aff;
+  --app-fog: #f9f9fbdc;
+}
+@media(prefers-reduced-transparency:reduce), (prefers-contrast:more) {
+  body:has(> header #save-status) .toolbar { backdrop-filter: none; background: var(--app-canvas); }
+}
+@media(forced-colors:active) {
+  body:has(> header #save-status) { --app-canvas: Canvas; --app-text: CanvasText; --panel: Canvas; --field: Field; --line: ButtonText; --muted: CanvasText; }
+}
