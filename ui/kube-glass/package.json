@@ -1,0 +1,22 @@
+{
+  "name": "aether-kube-glass",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "vite build" },
+  "dependencies": {
+    "@kube/math": "0.0.9",
+    "clsx": "2.1.1",
+    "lucide-react": "1.28.0",
+    "motion": "12.43.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-icons": "5.7.0",
+    "tailwind-merge": "3.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "canvas": "3.2.3",
+    "tailwindcss": "4.3.3",
+    "vite": "8.2.0"
+  }
+}

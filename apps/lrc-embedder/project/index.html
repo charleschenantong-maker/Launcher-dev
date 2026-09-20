@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LRC 歌词嵌入</title>
+  <script src="vendor/jszip.min.js"></script>
+<style>html,body{margin:0;padding:0;min-height:100%;height:100%}body{background:#0b0d0e}</style>
+</head>
+<body>
+<div id="panel-lrc" class="tool-panel" data-display="block" style="display:block">
+      <style>
+        #panel-lrc{
+          --l-bg:#0b0d0e; --l-panel:#111415; --l-panel-2:#161a1b; --l-line:#26302f;
+          --l-text:#d9e2e0; --l-text-dim:#7c8e8a; --l-accent:#37f2a0; --l-accent-dim:#1f7a55;
+          --l-warn:#ffb454; --l-err:#ff6b6b; --l-mono:"SF Mono","JetBrains Mono","Consolas","Menlo",monospace;
+          background:var(--l-bg); color:var(--l-text); font-family:var(--l-mono);
+          padding:28px 22px 60px;
+        }
+        #panel-lrc .wrap{ max-width:980px; margin:0 auto; }
+        #panel-lrc header{ margin-bottom:22px; border-bottom:1px solid var(--l-line); padding-bottom:16px; }
+        #panel-lrc header h1{ font-size:1.25em; margin:0 0 6px; letter-spacing:.02em; color:var(--l-accent); font-weight:700; }
+        #panel-lrc header h1::before{ content:"$ "; color:var(--l-text-dim); }
+        #panel-lrc header p{ margin:0; color:var(--l-text-dim); font-size:.86em; line-height:1.6; }
+
+        #panel-lrc .panel{ background:var(--l-panel); border:1px solid var(--l-line); border-radius:6px; padding:16px 18px; margin-bottom:16px; }
+        #panel-lrc .panel h2{ font-size:.82em; text-transform:uppercase; letter-spacing:.08em; color:var(--l-text-dim); margin:0 0 12px; font-weight:600; }
+        #panel-lrc .panel h2 span{ color:var(--l-accent); }
+
+        #panel-lrc #dropZone{ border:1px dashed var(--l-line); text-align:center; padding:34px 18px; cursor:pointer; transition:border-color .15s,background .15s; }
+        #panel-lrc #dropZone.drag{ border-color:var(--l-accent); background:rgba(55,242,160,.05); }
+        #panel-lrc #dropZone p{ margin:0 0 14px; color:var(--l-text-dim); font-size:.88em; }
+        #panel-lrc .btnrow{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+        #panel-lrc button{ font-family:inherit; font-size:.82em; cursor:pointer; border-radius:5px; padding:8px 14px; border:1px solid var(--l-line); background:var(--l-panel-2); color:var(--l-text); }
+        #panel-lrc button:hover{ border-color:var(--l-accent-dim); }
+        #panel-lrc button.primary{ background:var(--l-accent); color:#04120b; border-color:var(--l-accent); font-weight:700; }
+        #panel-lrc button.primary:hover{ background:#5bffb8; }
+        #panel-lrc button:disabled{ opacity:.4; cursor:not-allowed; }
+        #panel-lrc input[type=file]{ display:none; }
+
+        #panel-lrc .counts{ display:flex; gap:22px; margin-top:16px; font-size:.82em; color:var(--l-text-dim); flex-wrap:wrap; justify-content:center; }
+        #panel-lrc .counts b{ color:var(--l-text); font-size:1.1em; }
+
+        #panel-lrc .row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:.82em; color:var(--l-text-dim); flex-wrap:wrap; }
+        #panel-lrc .row input[type=range]{ flex:1; min-width:120px; accent-color:var(--l-accent); }
+        #panel-lrc .row b{ color:var(--l-accent); min-width:32px; display:inline-block; }
+
+        #panel-lrc table{ width:100%; border-collapse:collapse; font-size:.78em; }
+        #panel-lrc thead th{ text-align:left; color:var(--l-text-dim); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--l-line); position:sticky; top:0; background:var(--l-panel); }
+        #panel-lrc tbody td{ padding:6px 8px; border-bottom:1px solid #1b2222; vertical-align:middle; }
+        #panel-lrc tbody tr:hover{ background:var(--l-panel-2); }
+        #panel-lrc .tbl-wrap{ max-height:360px; overflow-y:auto; border:1px solid var(--l-line); border-radius:5px; }
+        #panel-lrc select{ font-family:inherit; font-size:1em; background:var(--l-panel-2); color:var(--l-text); border:1px solid var(--l-line); border-radius:4px; padding:3px 6px; max-width:260px; }
+        #panel-lrc .score{ font-variant-numeric:tabular-nums; }
+        #panel-lrc .score.hi{ color:var(--l-accent); } #panel-lrc .score.mid{ color:var(--l-warn); } #panel-lrc .score.lo{ color:var(--l-err); }
+        #panel-lrc .unmatched-note{ color:var(--l-text-dim); font-size:.78em; margin-top:8px; }
+
+        #panel-lrc .console{ background:#050706; border:1px solid var(--l-line); border-radius:5px; padding:10px 12px; height:220px; overflow-y:auto; font-size:.76em; line-height:1.65; white-space:pre-wrap; }
+        #panel-lrc .console .ok{ color:var(--l-accent); } #panel-lrc .console .warn{ color:var(--l-warn); } #panel-lrc .console .err{ color:var(--l-err); } #panel-lrc .console .dim{ color:var(--l-text-dim); }
+
+        #panel-lrc .progress{ height:4px; background:var(--l-panel-2); border-radius:2px; overflow:hidden; margin:10px 0; }
+        #panel-lrc .progress > div{ height:100%; background:var(--l-accent); width:0%; transition:width .15s; }
+
+        #panel-lrc .note{ font-size:.76em; color:var(--l-text-dim); line-height:1.6; margin-top:10px; }
+        #panel-lrc .note code{ color:var(--l-text); }
+        #panel-lrc [hidden]{ display:none !important; }
+      </style>
+
+      <div class="wrap">
+        <header>
+          <h1>LRC ⇄ 音频 粗合成器</h1>
+          <p>把一堆 mp3 / flac 和 lrc 混着丢进来，按文件名模糊匹配，只给匹配上的音频嵌入歌词标签，其余内容不动。全程在浏览器本地处理，不上传到任何服务器。</p>
+        </header>
+
+        <section class="panel" id="dropZone">
+          <p>拖拽文件到这里，或者选择文件 / 文件夹</p>
+          <div class="btnrow">
+            <button id="pickFilesBtn">选择文件</button>
+            <button id="pickFolderBtn">选择文件夹</button>
+          </div>
+          <input type="file" id="lrcFileInput" multiple accept=".mp3,.flac,.lrc">
+          <input type="file" id="folderInput" webkitdirectory multiple>
+          <div class="counts">
+            <div>音频 <b id="cntAudio">0</b></div>
+            <div>歌词 <b id="cntLrc">0</b></div>
+            <div>已匹配 <b id="cntMatched">0</b></div>
+          </div>
+        </section>
+
+        <section class="panel" id="matchSection" hidden>
+          <h2><span>2</span> · 匹配结果（可用下拉手动纠正）</h2>
+          <div class="row">
+            相似度阈值 <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.5"> <b id="thVal">0.50</b>
+            <button id="rematchBtn">按当前阈值重新自动匹配</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th style="width:34%">LRC 文件</th><th>匹配的音频</th><th style="width:70px">相似度</th></tr></thead>
+              <tbody id="matchBody"></tbody>
+            </table>
+          </div>
+          <div class="unmatched-note" id="unmatchedNote"></div>
+        </section>
+
+        <section class="panel" id="outputSection" hidden>
+          <h2><span>3</span> · 生成</h2>
+          <div class="btnrow" style="justify-content:flex-start;">
+            <button id="pickOutDirBtn">选择输出文件夹（推荐，Chrome / Edge）</button>
+            <button id="useZipBtn">改用打包 zip 下载</button>
+            <span id="outModeLabel" class="row" style="margin:0;"></span>
+          </div>
+          <div class="progress"><div id="progressBar"></div></div>
+          <div class="btnrow" style="justify-content:flex-start;">
+            <button class="primary" id="startBtn" disabled>开始合成</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>日志</h2>
+          <div class="console" id="logConsole"></div>
+        </section>
+
+        <p class="note">
+          说明：mp3 写入 <code>ID3v2.3 USLT</code>（未同步歌词）帧；flac 写入 <code>VORBIS_COMMENT</code> 的 <code>LYRICS</code> 字段。两者都只新增/替换歌词字段，音频数据字节不变。lrc 文本优先按 UTF-8 解码，检测到乱码会自动retry GBK（仅 Chrome 系浏览器支持 GBK 解码）。若同一音频被多个 lrc 选中，只会处理排在前面的那个，其余会在日志里提示跳过。
+        </p>
+      </div>
+    </div>
+<script>
+/* ══════════════════════ TOOL 3 SCRIPT: LRC ⇄ 音频 匹配嵌入 ══════════════════════ */
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+  let audioFiles = [];   // {file, name}
+  let lrcFiles = [];     // {file, name}
+  let matches = [];      // per lrcFiles index -> {ai, score} | null   (ai = index in audioFiles, or -1 for none)
+  let outDirHandle = null;
+  let outMode = null; // 'fsa' | 'zip'
+
+  function log(msg, cls){
+    const el = document.createElement('div');
+    if(cls) el.className = cls;
+    el.textContent = msg;
+    const c = $('#logConsole');
+    c.appendChild(el);
+    c.scrollTop = c.scrollHeight;
+  }
+
+  /* ---------------- file intake ---------------- */
+  function extOf(name){ const m=name.match(/\.([^.]+)$/); return m?m[1].toLowerCase():''; }
+
+  function addFileList(list){
+    let a=0, l=0;
+    for(const f of list){
+      const ext = extOf(f.name);
+      if(ext==='mp3' || ext==='flac'){ audioFiles.push({file:f, name:f.name}); a++; }
+      else if(ext==='lrc'){ lrcFiles.push({file:f, name:f.name}); l++; }
+    }
+    if(a||l){
+      log(`已添加 ${a} 个音频，${l} 个歌词文件`, 'dim');
+      refreshCounts();
+      if(audioFiles.length && lrcFiles.length){
+        $('#matchSection').hidden = false;
+        $('#outputSection').hidden = false;
+        runAutoMatch();
+      }
+    }
+  }
+
+  function refreshCounts(){
+    $('#cntAudio').textContent = audioFiles.length;
+    $('#cntLrc').textContent = lrcFiles.length;
+  }
+
+  $('#pickFilesBtn').addEventListener('click', () => $('#lrcFileInput').click());
+  $('#pickFolderBtn').addEventListener('click', () => $('#folderInput').click());
+  $('#lrcFileInput').addEventListener('change', e => { addFileList(e.target.files); e.target.value=''; });
+  $('#folderInput').addEventListener('change', e => { addFileList(e.target.files); e.target.value=''; });
+
+  const dz = $('#dropZone');
+  ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drag'); }));
+  dz.addEventListener('drop', e => { if(e.dataTransfer && e.dataTransfer.files.length) addFileList(e.dataTransfer.files); });
+
+  /* ---------------- fuzzy matching ---------------- */
+  function normalize(name){
+    return name.replace(/\.[^.]+$/,'')
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/[\s_\-.\(\)\[\]【】（）、，。！？!,:;'"′·~～]/g,'');
+  }
+
+  function levenshtein(a,b){
+    const m=a.length,n=b.length;
+    if(!m) return n; if(!n) return m;
+    let prev = new Array(n+1); for(let j=0;j<=n;j++) prev[j]=j;
+    for(let i=1;i<=m;i++){
+      const cur=[i];
+      for(let j=1;j<=n;j++){
+        const cost = a[i-1]===b[j-1] ? 0 : 1;
+        cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost);
+      }
+      prev = cur;
+    }
+    return prev[n];
+  }
+
+  function similarity(a,b){
+    if(!a.length && !b.length) return 1;
+    const d = levenshtein(a,b);
+    return 1 - d/Math.max(a.length,b.length);
+  }
+
+  let scoreCache = null; // scoreCache[li][ai]
+  function computeScores(){
+    const na = audioFiles.map(a => normalize(a.name));
+    const nl = lrcFiles.map(l => normalize(l.name));
+    scoreCache = nl.map(l => na.map(a => similarity(l,a)));
+  }
+
+  function runAutoMatch(){
+    computeScores();
+    const threshold = parseFloat($('#threshold').value);
+    const pairs = [];
+    for(let li=0; li<lrcFiles.length; li++)
+      for(let ai=0; ai<audioFiles.length; ai++)
+        pairs.push({li, ai, score: scoreCache[li][ai]});
+    pairs.sort((x,y) => y.score - x.score);
+    const usedA = new Set(), usedL = new Set();
+    matches = new Array(lrcFiles.length).fill(null);
+    for(const p of pairs){
+      if(usedL.has(p.li) || usedA.has(p.ai)) continue;
+      if(p.score < threshold) continue;
+      matches[p.li] = { ai: p.ai, score: p.score };
+      usedL.add(p.li); usedA.add(p.ai);
+    }
+    renderMatchTable();
+  }
+
+  function scoreClass(s){ return s>=0.75 ? 'hi' : s>=0.5 ? 'mid' : 'lo'; }
+
+  function renderMatchTable(){
+    const body = $('#matchBody');
+    body.innerHTML = '';
+    lrcFiles.forEach((lrc, li) => {
+      const tr = document.createElement('tr');
+      const tdL = document.createElement('td');
+      tdL.textContent = lrc.name;
+      tdL.style.wordBreak = 'break-all';
+
+      const tdA = document.createElement('td');
+      const sel = document.createElement('select');
+      sel.dataset.li = li;
+
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '-1'; noneOpt.textContent = '（不选 / 无匹配）';
+      sel.appendChild(noneOpt);
+
+      const candidates = audioFiles
+        .map((a, ai) => ({ ai, score: scoreCache[li][ai], name: a.name }))
+        .sort((x,y) => y.score - x.score)
+        .slice(0, 40);
+      candidates.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = String(c.ai);
+        opt.textContent = `${c.name}  (${(c.score*100).toFixed(0)}%)`;
+        sel.appendChild(opt);
+      });
+
+      const cur = matches[li];
+      sel.value = cur ? String(cur.ai) : '-1';
+      sel.addEventListener('change', () => {
+        const ai = parseInt(sel.value, 10);
+        matches[li] = ai === -1 ? null : { ai, score: scoreCache[li][ai] };
+        updateMatchedCount();
+        scoreCell.textContent = matches[li] ? (matches[li].score*100).toFixed(0)+'%' : '—';
+        scoreCell.className = 'score ' + (matches[li] ? scoreClass(matches[li].score) : '');
+      });
+      tdA.appendChild(sel);
+
+      const scoreCell = document.createElement('td');
+      scoreCell.textContent = cur ? (cur.score*100).toFixed(0)+'%' : '—';
+      scoreCell.className = 'score ' + (cur ? scoreClass(cur.score) : '');
+
+      tr.appendChild(tdL); tr.appendChild(tdA); tr.appendChild(scoreCell);
+      body.appendChild(tr);
+    });
+    updateMatchedCount();
+  }
+
+  function updateMatchedCount(){
+    const n = matches.filter(m => m).length;
+    $('#cntMatched').textContent = n;
+    $('#startBtn').disabled = n === 0 || !outMode;
+    const unmatchedAudio = audioFiles.length - new Set(matches.filter(m=>m).map(m=>m.ai)).size;
+    $('#unmatchedNote').textContent = `未匹配歌词：${lrcFiles.length - n} 个；不会被处理的音频：${unmatchedAudio} 个（这些音频原样保留在源目录，不会出现在输出里）`;
+  }
+
+  $('#threshold').addEventListener('input', () => { $('#thVal').textContent = parseFloat($('#threshold').value).toFixed(2); });
+  $('#rematchBtn').addEventListener('click', runAutoMatch);
+
+  /* ---------------- output target ---------------- */
+  $('#pickOutDirBtn').addEventListener('click', async () => {
+    if(!('showDirectoryPicker' in window)){
+      log('当前浏览器不支持直接写入文件夹（需要 Chrome / Edge），请改用打包 zip 下载。', 'warn');
+      return;
+    }
+    try{
+      outDirHandle = await window.showDirectoryPicker();
+      outMode = 'fsa';
+      $('#outModeLabel').textContent = '输出方式：直接写入所选文件夹';
+      updateMatchedCount();
+    }catch(e){ log('未选择文件夹：'+e.message, 'dim'); }
+  });
+  $('#useZipBtn').addEventListener('click', () => {
+    outMode = 'zip';
+    $('#outModeLabel').textContent = '输出方式：打包成 zip 下载（文件很多/很大时可能吃满内存，请留意）';
+    updateMatchedCount();
+  });
+
+  /* ---------------- ID3v2.3 USLT writer (mp3) ---------------- */
+  function synchsafeToInt(b){ return (b[0]<<21)|(b[1]<<14)|(b[2]<<7)|b[3]; }
+  function intToSynchsafe(n){ return new Uint8Array([(n>>>21)&0x7F,(n>>>14)&0x7F,(n>>>7)&0x7F,n&0x7F]); }
+
+  function parseID3Header(bytes){
+    if(bytes.length<10) return null;
+    if(!(bytes[0]===0x49 && bytes[1]===0x44 && bytes[2]===0x33)) return null;
+    const verMajor=bytes[3], size=synchsafeToInt(bytes.subarray(6,10));
+    return { verMajor, size, totalLen: 10+size };
+  }
+
+  function parseFrames(bytes, offset, end, verMajor){
+    const frames=[]; let p=offset;
+    while(p+10<=end){
+      const id = String.fromCharCode(bytes[p],bytes[p+1],bytes[p+2],bytes[p+3]);
+      if(id==='\0\0\0\0') break;
+      let size;
+      if(verMajor>=4) size = synchsafeToInt(bytes.subarray(p+4,p+8));
+      else size = (bytes[p+4]<<24)|(bytes[p+5]<<16)|(bytes[p+6]<<8)|bytes[p+7];
+      const total = 10+size;
+      if(size<0 || p+total>end) break;
+      frames.push({ id, raw: bytes.subarray(p, p+total) });
+      p += total;
+    }
+    return frames;
+  }
+
+  function buildUSLTFrame(text){
+    const langBytes = [0x75,0x6E,0x64]; // 'und'
+    const bom = [0xFF,0xFE];
+    const textBytes = [];
+    for(let i=0;i<text.length;i++){
+      const code = text.charCodeAt(i);
+      textBytes.push(code & 0xFF, (code>>8)&0xFF);
+    }
+    const content = new Uint8Array(1+3+2+2+2+textBytes.length);
+    let o=0;
+    content[o++]=0x01; // UTF-16 with BOM
+    content.set(langBytes,o); o+=3;
+    content.set(bom,o); o+=2;      // content descriptor BOM
+    content.set([0,0],o); o+=2;    // empty descriptor terminator
+    content.set(bom,o); o+=2;      // lyrics text BOM
+    content.set(textBytes,o); o+=textBytes.length;
+
+    const frame = new Uint8Array(10+content.length);
+    frame.set([0x55,0x53,0x4C,0x54],0); // 'USLT'
+    frame.set([(content.length>>>24)&0xFF,(content.length>>>16)&0xFF,(content.length>>>8)&0xFF,content.length&0xFF],4);
+    frame.set([0,0],8);
+    frame.set(content,10);
+    return frame;
+  }
+
+  function embedLyricsMp3(buf, lyricsText){
+    const bytes = new Uint8Array(buf);
+    const header = parseID3Header(bytes);
+    let existingFrames = [], audioStart = 0;
+    if(header){
+      if(header.verMajor === 2){
+        // ID3v2.2, rare & different frame layout — leave the old tag alone, just prepend a fresh one
+        audioStart = 0; existingFrames = [];
+      } else {
+        existingFrames = parseFrames(bytes, 10, header.totalLen, header.verMajor).filter(f => f.id !== 'USLT');
+        audioStart = header.totalLen;
+      }
+    }
+    const uslt = buildUSLTFrame(lyricsText);
+    let framesLen = uslt.length;
+    existingFrames.forEach(f => framesLen += f.raw.length);
+    const newHeader = new Uint8Array(10);
+    newHeader.set([0x49,0x44,0x33,3,0,0],0);
+    newHeader.set(intToSynchsafe(framesLen),6);
+
+    const out = new Uint8Array(10+framesLen+(bytes.length-audioStart));
+    let o=0;
+    out.set(newHeader,o); o+=10;
+    existingFrames.forEach(f => { out.set(f.raw,o); o+=f.raw.length; });
+    out.set(uslt,o); o+=uslt.length;
+    out.set(bytes.subarray(audioStart), o);
+    return out.buffer;
+  }
+
+  /* ---------------- FLAC VORBIS_COMMENT writer ---------------- */
+  function readU32LE(d,p){ return (d[p] | (d[p+1]<<8) | (d[p+2]<<16) | (d[p+3]<<24)) >>> 0; }
+  function writeU32LE(a,p,v){ a[p]=v&0xFF; a[p+1]=(v>>8)&0xFF; a[p+2]=(v>>16)&0xFF; a[p+3]=(v>>24)&0xFF; }
+
+  function parseVorbisComment(data){
+    let p=0;
+    const vlen = readU32LE(data,p); p+=4;
+    const vendor = new TextDecoder('utf-8').decode(data.subarray(p,p+vlen)); p+=vlen;
+    const count = readU32LE(data,p); p+=4;
+    const comments=[];
+    for(let i=0;i<count;i++){
+      const len = readU32LE(data,p); p+=4;
+      comments.push(new TextDecoder('utf-8').decode(data.subarray(p,p+len))); p+=len;
+    }
+    return { vendor, comments };
+  }
+
+  function buildVorbisComment(vendor, comments){
+    const enc = new TextEncoder();
+    const vendorBytes = enc.encode(vendor);
+    const cBytes = comments.map(c => enc.encode(c));
+    let total = 4+vendorBytes.length+4;
+    cBytes.forEach(cb => total += 4+cb.length);
+    const out = new Uint8Array(total);
+    let o=0;
+    writeU32LE(out,o,vendorBytes.length); o+=4;
+    out.set(vendorBytes,o); o+=vendorBytes.length;
+    writeU32LE(out,o,cBytes.length); o+=4;
+    cBytes.forEach(cb => { writeU32LE(out,o,cb.length); o+=4; out.set(cb,o); o+=cb.length; });
+    return out;
+  }
+
+  function embedLyricsFlac(buf, lyricsText){
+    const bytes = new Uint8Array(buf);
+    if(!(bytes[0]===0x66 && bytes[1]===0x4C && bytes[2]===0x61 && bytes[3]===0x43))
+      throw new Error('缺少 fLaC 头，可能不是有效的 flac 文件');
+    let p=4;
+    const blocks=[];
+    while(p+4<=bytes.length){
+      const hb = bytes[p];
+      const isLast = (hb & 0x80) !== 0;
+      const type = hb & 0x7F;
+      const len = (bytes[p+1]<<16)|(bytes[p+2]<<8)|bytes[p+3];
+      const start = p+4, end = start+len;
+      blocks.push({ type, data: bytes.subarray(start,end) });
+      p = end;
+      if(isLast) break;
+    }
+    const audioStart = p;
+
+    let vcIndex = blocks.findIndex(b => b.type === 4);
+    let vendor = 'rough-lrc-embedder', comments = [];
+    if(vcIndex >= 0){
+      const parsed = parseVorbisComment(blocks[vcIndex].data);
+      vendor = parsed.vendor;
+      comments = parsed.comments.filter(c => !/^lyrics=/i.test(c) && !/^unsyncedlyrics=/i.test(c));
+    }
+    comments.push('LYRICS=' + lyricsText);
+    const newBody = buildVorbisComment(vendor, comments);
+    if(vcIndex >= 0) blocks[vcIndex] = { type:4, data:newBody };
+    else blocks.push({ type:4, data:newBody });
+
+    let total = 4;
+    blocks.forEach(b => total += 4+b.data.length);
+    total += (bytes.length - audioStart);
+    const out = new Uint8Array(total);
+    out.set([0x66,0x4C,0x61,0x43],0);
+    let o=4;
+    blocks.forEach((b,i) => {
+      const isLast = i === blocks.length-1;
+      out[o] = (isLast?0x80:0) | (b.type & 0x7F);
+      out[o+1] = (b.data.length>>16)&0xFF;
+      out[o+2] = (b.data.length>>8)&0xFF;
+      out[o+3] = b.data.length&0xFF;
+      out.set(b.data,o+4);
+      o += 4+b.data.length;
+    });
+    out.set(bytes.subarray(audioStart), o);
+    return out.buffer;
+  }
+
+  /* ---------------- lrc text reading with GBK fallback ---------------- */
+  async function readLrcText(file){
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let text = new TextDecoder('utf-8').decode(bytes);
+    const bad = (text.match(/\uFFFD/g) || []).length;
+    if(bad > text.length * 0.02){
+      try{
+        const t2 = new TextDecoder('gbk').decode(bytes);
+        if((t2.match(/\uFFFD/g)||[]).length < bad) text = t2;
+      }catch(e){ /* gbk decoder not supported in this browser */ }
+    }
+    return text;
+  }
+
+  /* ---------------- run ---------------- */
+  $('#startBtn').addEventListener('click', runProcess);
+
+  async function runProcess(){
+    $('#startBtn').disabled = true;
+    const jobs = [];
+    const usedAudio = new Set();
+    matches.forEach((m, li) => {
+      if(!m) return;
+      if(usedAudio.has(m.ai)){
+        log(`跳过 ${lrcFiles[li].name}：目标音频已被更靠前的歌词占用`, 'warn');
+        return;
+      }
+      usedAudio.add(m.ai);
+      jobs.push({ li, ai: m.ai, score: m.score });
+    });
+
+    if(jobs.length === 0){ log('没有可处理的匹配项。', 'warn'); $('#startBtn').disabled=false; return; }
+
+    let zip = outMode === 'zip' ? new JSZip() : null;
+    let ok=0, fail=0;
+    const bar = $('#progressBar');
+
+    for(let i=0;i<jobs.length;i++){
+      const { li, ai, score } = jobs[i];
+      const lrcEntry = lrcFiles[li], audioEntry = audioFiles[ai];
+      bar.style.width = Math.round(((i+1)/jobs.length)*100) + '%';
+      try{
+        const lyricsText = await readLrcText(lrcEntry.file);
+        const audioBuf = await audioEntry.file.arrayBuffer();
+        const ext = extOf(audioEntry.name);
+        const outBuf = ext === 'mp3' ? embedLyricsMp3(audioBuf, lyricsText) : embedLyricsFlac(audioBuf, lyricsText);
+        const blob = new Blob([outBuf], { type: ext==='mp3' ? 'audio/mpeg' : 'audio/flac' });
+
+        if(outMode === 'fsa'){
+          const fh = await outDirHandle.getFileHandle(audioEntry.name, { create:true });
+          const w = await fh.createWritable();
+          await w.write(blob);
+          await w.close();
+        } else {
+          zip.file(audioEntry.name, blob, { compression:'STORE' });
+        }
+        ok++;
+        log(`✓ ${audioEntry.name}  ←  ${lrcEntry.name}  (${(score*100).toFixed(0)}%)`, 'ok');
+      }catch(e){
+        fail++;
+        log(`✗ ${audioEntry.name}  失败：${e.message}`, 'err');
+      }
+      if(i % 8 === 0) await new Promise(r => setTimeout(r, 0));
+    }
+
+    if(outMode === 'zip' && ok>0){
+      log('正在打包 zip……', 'dim');
+      const blob = await zip.generateAsync({ type:'blob' }, meta => {
+        bar.style.width = Math.round(meta.percent) + '%';
+      });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'lyrics_embedded.zip';
+      a.click();
+      log('zip 已生成，浏览器应该已经开始下载。', 'ok');
+    }
+
+    log(`完成：成功 ${ok} 个，失败 ${fail} 个。`, ok?'ok':'warn');
+    $('#startBtn').disabled = false;
+  }
+
+  refreshCounts();
+})();
+</script>
+</body>
+</html>

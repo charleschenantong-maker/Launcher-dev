@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AimLab Trainer 3D</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0b1119; --panel:#131e2b; --line:#26374b;
+  --text:#eef3f9; --muted:#8b98a9;
+  --accent:#22d3ee; --accent2:#0ea5e9;
+  --red:#ff4655; --gold:#facc15;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1000px 480px at 50% -10%,#1d3040 0,transparent 60%),var(--bg);
+  color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;user-select:none;-webkit-user-select:none}
+.topbar{width:min(1020px,96vw);display:flex;align-items:center;gap:12px;padding:16px 4px 8px}
+.logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:grid;place-items:center;color:#06222a;font-weight:900;box-shadow:0 0 14px rgba(34,211,238,.5)}
+.topbar h1{font-size:16px;margin:0;letter-spacing:.14em}
+.topbar h1 small{display:block;font-size:10px;color:var(--muted);letter-spacing:.24em}
+.spacer{flex:1}
+.badge{font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.card{width:min(1020px,96vw);background:linear-gradient(180deg,#182635,#111b27);border:1px solid #263445;border-radius:16px;padding:24px}
+h2{margin:0 0 6px} .sub{margin:0 0 16px;color:var(--muted);font-size:13px}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:680px){.modes{grid-template-columns:1fr}}
+.mode{background:#0e1722;border:1px solid #2b3b4f;border-radius:14px;padding:18px;text-align:left;color:var(--text);cursor:pointer}
+.mode:hover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 0 24px rgba(34,211,238,.25)}
+.mode h3{margin:0}.mode h3 span{color:var(--accent)}
+.mode p{color:var(--muted);font-size:13px;margin:6px 0 10px}
+.spec{font-family:var(--mono);font-size:12px;background:#0a121c;border:1px solid #223145;border-radius:8px;padding:8px 10px;margin-bottom:12px;color:#c7d3e2}
+.go{display:inline-block;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#052630;font-weight:800;border-radius:9px;padding:9px 18px;font-size:14px}
+.best{margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.best b{color:var(--text)}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;background:#0c1520;border:1px solid #22334a;border-radius:12px;padding:14px 16px}
+@media(max-width:680px){.settings{grid-template-columns:1fr}}
+.settings label{font-size:12px;color:var(--muted);letter-spacing:.08em;font-weight:700}
+.settings output{font-family:var(--mono);color:var(--text);margin-left:8px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.rules{color:var(--muted);font-size:12.5px;margin:14px 2px 0}
+.rules code{font-family:var(--mono);color:#c9d6e8;background:#0b1420;padding:1px 6px;border-radius:6px;border:1px solid #223145}
+/* game */
+#view-game{width:min(1020px,96vw)}
+.hud{display:flex;gap:8px;margin:8px 0 10px;flex-wrap:wrap}
+.stat{flex:1;min-width:130px;background:#0e1722;border:1px solid #26374b;border-radius:12px;padding:8px 14px}
+.stat small{display:block;font-size:10px;letter-spacing:.2em;color:var(--muted);font-weight:700}
+.stat strong{font-family:var(--mono);font-size:22px;font-variant-numeric:tabular-nums}
+.stat.low strong{color:var(--red)}
+.streak{font-family:var(--mono);font-size:12px;color:var(--gold);border:1px solid #4a3f1d;background:#221c08;border-radius:999px;padding:6px 12px;align-self:center}
+.stage{position:relative}
+canvas#game{width:100%;height:auto;aspect-ratio:16/9;display:block;background:#05090f;border:1px solid #2a3a4f;border-radius:14px;cursor:crosshair}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(4,9,15,.72);border-radius:14px;text-align:center;padding:20px;z-index:5}
+.overlay h3{font-size:34px;margin:0 0 8px;letter-spacing:.1em}
+.overlay p{color:var(--muted);margin:0 0 14px}
+.bigbtn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;color:#052630;font-weight:900;letter-spacing:.06em;
+  border-radius:10px;padding:12px 26px;font-size:15px;cursor:pointer}
+.ghost-btn{background:transparent;border:1px solid #33465d;color:var(--muted);border-radius:9px;padding:7px 12px;cursor:pointer;font-size:13px}
+.ghost-btn:hover{color:#fff;border-color:var(--accent)}
+.hud-row{display:flex;gap:10px;align-items:center;margin-bottom:2px}
+.modelabel{font-size:12px;letter-spacing:.18em;font-weight:800;color:var(--accent);border:1px solid #23485a;background:#0b1c24;border-radius:999px;padding:5px 12px}
+/* result */
+.modal{position:fixed;inset:0;background:rgba(5,10,16,.74);display:grid;place-items:center;padding:18px;z-index:20}
+.panel{width:min(600px,94vw);max-height:92vh;overflow:auto;background:#141f2c;border:1px solid #2c3e54;border-radius:16px;padding:24px}
+.panel h2 span{color:var(--accent)}
+.score-big{font-family:var(--mono);font-size:46px;margin:4px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+@media(max-width:520px){.grid{grid-template-columns:1fr}}
+.cell{background:#0c1520;border:1px solid #22334a;border-radius:12px;padding:10px 14px}
+.cell small{display:block;font-size:10px;letter-spacing:.18em;color:var(--muted);font-weight:700}
+.cell strong{font-family:var(--mono);font-size:20px;font-variant-numeric:tabular-nums}
+.newrec{display:inline-block;font-size:11px;font-weight:800;color:#052630;background:linear-gradient(135deg,#facc15,#fb923c);border-radius:999px;padding:2px 9px;margin-left:8px}
+.bars{display:flex;align-items:flex-end;gap:6px;height:110px;background:#0b1420;border:1px solid #223145;border-radius:10px;padding:10px 10px 6px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;min-width:0}
+.bar i{display:block;width:100%;max-width:44px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,var(--accent),#155e75);min-height:3px}
+.bar b{font-family:var(--mono);font-size:10px}.bar span{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;border:0;border-radius:10px;padding:12px;cursor:pointer;font-weight:800;font-size:14px}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#052630}
+.btn.ghost{background:transparent;border:1px solid #33465d;color:#dbe5f1}
+[hidden]{display:none!important}
+.foot{color:#5b6b80;font-size:11px;font-family:var(--mono);padding:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">◎</div>
+  <h1>AIMLAB TRAINER 3D<small>AETHER HUB · OFFLINE FPS</small></h1>
+  <div class="spacer"></div><div class="badge" id="save-badge">LOCAL SAVE READY</div>
+</div>
+
+<section class="card" id="view-menu">
+  <h2>选择训练任务</h2>
+  <p class="sub">3D 房间 · 手持手枪 · 第一人称鼠标视角（点击锁定）· 60 秒 · 计分复刻 AimLab</p>
+  <div class="modes">
+    <button class="mode" id="btn-gridshot">
+      <h3><span>●</span> Gridshot</h3>
+      <p>3 个大球练短 flick 与连击节奏，街机刷分首选。</p>
+      <div class="spec">3 targets · 大球 r≈0.34m · 墙距10m</div>
+      <span class="go">进入 GRIDSHOT →</span>
+      <div class="best" id="best-gridshot">最佳 —</div>
+    </button>
+    <button class="mode" id="btn-sixshot">
+      <h3><span>●</span> Sixshot</h3>
+      <p>6 个小球练精瞄，半径约 38%，面积约 14%。</p>
+      <div class="spec">6 targets · 小球 r≈0.13m · 墙距10m</div>
+      <span class="go">进入 SIXSHOT →</span>
+      <div class="best" id="best-sixshot">最佳 —</div>
+    </button>
+  </div>
+  <div class="settings">
+    <div>
+      <label>鼠标灵敏度<output id="sens-val">1.0</output></label>
+      <input type="range" id="sens" min="0.1" max="5" step="0.1" value="1">
+      <div class="sub" style="margin:6px 0 0"> yaw/pitch 速度，ESC 暂停后也可调，自动保存</div>
+    </div>
+    <div>
+      <label>音效<output id="snd-val">开</output></label><br>
+      <button class="ghost-btn" id="btn-snd">切换 开/关</button>
+      <div class="sub" style="margin:6px 0 0">纯 WebAudio 合成，无外部音频文件</div>
+    </div>
+  </div>
+  <p class="rules">计分复刻：<code>单发 = (基础+精准加成) × 连击倍率</code>（Gridshot 基础200+200×精准度，Sixshot 基础350+250×精准度；精准度=1−弹着点距圆心/半径；连击每连杀+5%，20连满×2；miss断连击不清分）。100k≈准职业线。操作：点击画面锁定鼠标 → 移动视角 → 左键射击 → ESC暂停/调灵敏度。</p>
+</section>
+
+<section id="view-game" hidden>
+  <div class="hud-row">
+    <span class="modelabel" id="hud-mode">GRIDSHOT</span>
+    <div class="spacer"></div>
+    <button class="ghost-btn" id="btn-quit">✕ 退出</button>
+  </div>
+  <div class="hud">
+    <div class="stat"><small>SCORE</small><strong id="hud-score">0</strong></div>
+    <div class="stat" id="stat-time"><small>TIME</small><strong id="hud-time">60.0</strong></div>
+    <div class="stat"><small>KILLS</small><strong id="hud-kills">0</strong></div>
+    <div class="stat"><small>ACCURACY</small><strong id="hud-acc">100.0%</strong></div>
+    <div class="streak" id="hud-streak">STREAK ×0 · ×1.00</div>
+  </div>
+  <div class="stage">
+    <canvas id="game" width="960" height="540"></canvas>
+    <div class="overlay" id="lock-tip">
+      <div>
+        <h3 id="lock-title">点击锁定鼠标</h3>
+        <p id="lock-sub">锁定后移动视角射击 · ESC 暂停 · 灵敏度 <span id="lock-sens">1.0</span></p>
+        <button class="bigbtn" id="btn-lock">锁定并开始</button>
+        <p style="margin-top:10px;font-size:12px">若浏览器拒绝锁定，会自动降级为“鼠标直瞄”模式</p>
+      </div>
+    </div>
+    <div class="overlay" id="count-tip" hidden><div><h3 id="count-num">3</h3><p>保持瞄准，准备开火</p></div></div>
+  </div>
+  <p class="rules" style="text-align:center">WASD 不移动（AimLab 原版站桩）· 只练鼠标 flick · 弹着点越接近圆心分越高</p>
+</section>
+
+<div class="modal" id="view-result" hidden>
+  <div class="panel" role="dialog" aria-modal="true">
+    <h2 id="res-title">GRIDSHOT <span>结算</span></h2>
+    <p class="sub" id="res-sub">60 秒结束</p>
+    <div class="score-big" id="res-score">0</div>
+    <div class="grid">
+      <div class="cell"><small>KILLS</small><strong id="res-kills">0</strong><span id="rec-score"></span></div>
+      <div class="cell"><small>ACCURACY</small><strong id="res-acc">—</strong></div>
+      <div class="cell"><small>AVG TTK</small><strong id="res-avg">—</strong></div>
+      <div class="cell"><small>BEST TTK</small><strong id="res-fast">—</strong></div>
+      <div class="cell"><small>AVG PRECISION</small><strong id="res-prec">—</strong></div>
+      <div class="cell"><small>BEST STREAK</small><strong id="res-streak">0</strong></div>
+    </div>
+    <h4 style="font-size:11px;letter-spacing:.2em;color:var(--muted)">TTK 分布（MS）</h4>
+    <div class="bars" id="hist"></div>
+    <div class="btns">
+      <button class="btn primary" id="btn-retry">↻ 同模式再来</button>
+      <button class="btn ghost" id="btn-back">返回选择</button>
+    </div>
+  </div>
+</div>
+
+<div class="foot">raw canvas 2d pseudo-3d · no cdn · pointer-lock fps + fallback absolute aim · scoring mirrors aimlab</div>
+
+<script>
+'use strict';
+try{
+  if(window.appStore&&window.appStore.theme)document.documentElement.dataset.theme=window.appStore.theme()||'dark';
+  if(window.appStore&&window.appStore.onTheme)window.appStore.onTheme(function(t){document.documentElement.dataset.theme=t;});
+}catch(e){}
+
+/* ============ 世界/模式参数 ============ */
+var WALL_Z=-10, ROOM_X=6, ROOM_Y0=0, ROOM_Y1=4, EYE_Y=1.7;
+var FOV=75*Math.PI/180, DUR=60000;
+var MODES={
+  gridshot:{label:'GRIDSHOT',count:3,r:0.34,base:200,pbonus:200},
+  sixshot:{label:'SIXSHOT',count:6,r:0.13,base:350,pbonus:250}
+};
+var BUCKETS=[{l:'<200',a:0,b:200},{l:'200-350',a:200,b:350},{l:'350-500',a:350,b:500},{l:'500-700',a:500,b:700},{l:'700-1k',a:700,b:1000},{l:'1-1.5k',a:1000,b:1500},{l:'>1.5k',a:1500,b:1e9}];
+
+/* ============ 存档 ============ */
+var SAVE_KEY='aimlab-best-v1';
+var store={gridshot:{best:0,plays:0},sixshot:{best:0,plays:0},sens:1,sound:true};
+function setBadge(t){document.getElementById('save-badge').textContent=t;}
+function loadStore(){
+  try{
+    var raw=window.appStore?window.appStore.read():JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(raw){
+      if(raw.gridshot)store.gridshot=Object.assign(store.gridshot,raw.gridshot);
+      if(raw.sixshot)store.sixshot=Object.assign(store.sixshot,raw.sixshot);
+      if(typeof raw.sens==='number')store.sens=Math.min(5,Math.max(0.1,raw.sens));
+      if(typeof raw.sound==='boolean')store.sound=raw.sound;
+    }
+  }catch(e){setBadge('SAVE READ FAILED');return;}
+  setBadge(window.appStore?'AETHER SAVE READY':'LOCAL SAVE READY');
+}
+function saveStore(){try{if(window.appStore)window.appStore.write(store);else localStorage.setItem(SAVE_KEY,JSON.stringify(store));}catch(e){setBadge('SAVE FAILED');}}
+function $(id){return document.getElementById(id);}
+
+/* ============ 音效（WebAudio合成，离线） ============ */
+var AC=null;
+function blip(f0,f1,dur,type,vol){
+  if(!store.sound)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended')AC.resume();
+    var o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;
+    o.type=type||'square';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
+    g.gain.setValueAtTime(vol||0.06,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+dur+0.02);
+  }catch(e){}
+}
+
+/* ============ 状态 ============ */
+var cv=$('game'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+var F=(H/2)/Math.tan(FOV/2);
+var modeKey='gridshot',phase='menu'; // menu|lock|count|play|pause|done
+var yaw=0,pitch=0,aimX=W/2,aimY=H/2,fpsMode=true;
+var targets=[],score=0,kills=0,shots=0,streak=0,bestStreak=0,ttks=[],precs=[],lastKillT=0;
+var endAt=0,pauseStart=0,countT=null,raf=0,flashHit=0,flashMiss=0,lastShotT=0,recoil=0,swayX=0,swayY=0,popups=[],markers=[];
+var sensInput=$('sens');
+
+function combo(){return 1+Math.min(streak,20)*0.05;}
+function acc(){return shots===0?100:kills/shots*100;}
+function refreshBest(){
+  [['gridshot'],['sixshot']].forEach(function(pair){
+    var k=pair[0],s=store[k];
+    $('best-'+k).innerHTML='最佳 <b>'+s.best+' 分</b> · '+s.plays+' 场';
+  });
+  $('sens-val').textContent=(+store.sens).toFixed(1);
+  $('lock-sens').textContent=(+store.sens).toFixed(1);
+  $('snd-val').textContent=store.sound?'开':'关';
+  if(document.activeElement!==sensInput)sensInput.value=store.sens;
+}
+
+/* ============ 3D数学（前向 -Z，标准FPS） ============ */
+function dirVec(){var cp=Math.cos(pitch);return{x:-Math.sin(yaw)*cp,y:Math.sin(pitch),z:-Math.cos(yaw)*cp};}
+function rightVec(){return{x:Math.cos(yaw),y:0,z:-Math.sin(yaw)};}
+function upVec(){var sy=Math.sin(yaw);return{x:sy*Math.sin(pitch),y:Math.cos(pitch),z:Math.cos(yaw)*Math.sin(pitch)};}
+function project(wx,wy,wz){
+  var d=dirVec(),r=rightVec(),u=upVec();
+  var vx=wx-0,vy=wy-EYE_Y,vz=wz-0;
+  var cz=vx*d.x+vy*d.y+vz*d.z;
+  if(cz<0.15)return null;
+  var cx=vx*r.x+vy*r.y+vz*r.z, cy=vx*u.x+vy*u.y+vz*u.z;
+  return{x:W/2+cx/cz*F, y:H/2-cy/cz*F, d:cz};
+}
+function rayHit(){
+  // 返回fps中心 ray 与墙交点；fallback 用 aimX/aimY 反投影
+  var d,r,u,ox,oy;
+  if(fpsMode){d=dirVec();var t=(WALL_Z-0)/d.z;return{x:d.x*t,y:EYE_Y+d.y*t};}
+  d=dirVec();r=rightVec();u=upVec();
+  var nx=(aimX-W/2)/F, ny=-(aimY-H/2)/F;
+  var wx=nx*r.x+ny*u.x+d.x, wy=nx*r.y+ny*u.y+d.y, wz=nx*r.z+ny*u.z+d.z;
+  var t2=(WALL_Z-0)/wz;return{x:wx*t2,y:EYE_Y+wy*t2};
+}
+
+/* ============ 目标生成（墙面世界坐标，动态防重叠） ============ */
+function findSpot(r,ex){
+  var mx0=-4.5+r+0.12,mx1=4.5-r-0.12,my0=0.55+r,my1=3.2-r,gap=r*2+0.14,x,y,ok,i,dx,dy,t;
+  x=0;y=1.7;
+  for(t=0;t<300;t++){
+    x=mx0+Math.random()*(mx1-mx0);y=my0+Math.random()*(my1-my0);ok=true;
+    for(i=0;i<ex.length;i++){dx=ex[i].x-x;dy=ex[i].y-y;if(Math.sqrt(dx*dx+dy*dy)<gap){ok=false;break;}}
+    if(ok)return{x:x,y:y};
+  }
+  for(t=0;t<100;t++){
+    x=mx0+Math.random()*(mx1-mx0);y=my0+Math.random()*(my1-my0);ok=true;
+    for(i=0;i<ex.length;i++){dx=ex[i].x-x;dy=ex[i].y-y;if(Math.sqrt(dx*dx+dy*dy)<r*2+0.02){ok=false;break;}}
+    if(ok)return{x:x,y:y};
+  }
+  return{x:x,y:y};
+}
+function spawnOne(){
+  var cfg=MODES[modeKey],p=findSpot(cfg.r,targets);
+  targets.push({x:p.x,y:p.y,r:cfg.r,born:performance.now(),pulse:Math.random()*6});
+}
+
+/* ============ 射击 ============ */
+function shoot(){
+  if(phase!=='play')return;
+  var now=performance.now();
+  if(now-endAt>=0)return;
+  lastShotT=now;recoil=1;
+  var cfg=MODES[modeKey],hp=rayHit(),best=null,bd=1e9,i,dx,dy,dd;
+  for(i=0;i<targets.length;i++){
+    dx=hp.x-targets[i].x;dy=hp.y-targets[i].y;dd=Math.sqrt(dx*dx+dy*dy);
+    if(dd<=targets[i].r&&dd<bd){bd=dd;best=i;}
+  }
+  shots++;
+  var sp=project(hp.x,hp.y,WALL_Z);
+  if(best!==null){
+    var t=targets[best],prec=1-bd/t.r;
+    var ttk=lastKillT?now-lastKillT:now-roundStartT;
+    ttks.push(ttk);precs.push(prec);lastKillT=now;
+    streak++;bestStreak=Math.max(bestStreak,streak);
+    var pts=Math.round((cfg.base+cfg.pbonus*prec)*combo());
+    score+=pts;kills++;
+    popups.push({x:sp?sp.x:W/2,y:sp?sp.y:H/2,txt:'+'+pts,life:1});
+    markers.push({x:sp?sp.x:W/2,y:sp?sp.y:H/2,life:1,hit:true});
+    flashHit=1;blip(700,1150,0.07,'square',0.05);
+    targets.splice(best,1);spawnOne();
+  }else{
+    streak=0;flashMiss=1;
+    markers.push({x:fpsMode?W/2:aimX,y:fpsMode?H/2:aimY,life:1,hit:false});
+    blip(220,120,0.08,'sawtooth',0.04);
+  }
+  updateHUD(now);
+}
+function updateHUD(now){
+  $('hud-score').textContent=score;
+  $('hud-kills').textContent=kills;
+  $('hud-acc').textContent=acc().toFixed(1)+'%';
+  $('hud-streak').textContent='STREAK ×'+streak+' · ×'+combo().toFixed(2);
+  var left=Math.max(0,endAt-now);
+  $('hud-time').textContent=(left/1000).toFixed(1);
+  $('stat-time').classList.toggle('low',left<=10000);
+}
+
+/* ============ 渲染 ============ */
+function line(a,b){if(!a||!b)return;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+function drawScene(now,dt){
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0a1420');g.addColorStop(0.55,'#101d2c');g.addColorStop(1,'#070c13');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // 背墙
+  var c1=project(-ROOM_X,ROOM_Y0,WALL_Z),c2=project(ROOM_X,ROOM_Y0,WALL_Z),
+      c3=project(ROOM_X,ROOM_Y1,WALL_Z),c4=project(-ROOM_X,ROOM_Y1,WALL_Z);
+  if(c1&&c2&&c3&&c4){
+    var wg=ctx.createLinearGradient(0,c3.y,0,c1.y);
+    wg.addColorStop(0,'#1b2c40');wg.addColorStop(1,'#13202f');
+    ctx.fillStyle=wg;ctx.beginPath();
+    ctx.moveTo(c1.x,c1.y);ctx.lineTo(c2.x,c2.y);ctx.lineTo(c3.x,c3.y);ctx.lineTo(c4.x,c4.y);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='rgba(90,130,170,.28)';ctx.lineWidth=1;
+    var x,y;
+    for(x=-6;x<=6;x++)line(project(x,ROOM_Y0,WALL_Z),project(x,ROOM_Y1,WALL_Z));
+    for(y=0.5;y<=4;y+=0.5)line(project(-ROOM_X,y,WALL_Z),project(ROOM_X,y,WALL_Z));
+  }
+  // 地板
+  var f1=project(-ROOM_X,0,WALL_Z),f2=project(ROOM_X,0,WALL_Z),f3=project(ROOM_X,0,0.9),f4=project(-ROOM_X,0,0.9);
+  if(f1&&f2&&f3&&f4){
+    ctx.fillStyle='#0b1420';ctx.beginPath();
+    ctx.moveTo(f1.x,f1.y);ctx.lineTo(f2.x,f2.y);ctx.lineTo(f3.x,f3.y);ctx.lineTo(f4.x,f4.y);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='rgba(60,100,140,.30)';
+    var gx,gz;
+    for(gx=-6;gx<=6;gx+=1)line(project(gx,0,WALL_Z),project(gx,0,0.9));
+    for(gz=-10;gz<=0;gz+=2)line(project(-ROOM_X,0,gz),project(ROOM_X,0,gz));
+  }
+  // 侧墙
+  ctx.strokeStyle='rgba(70,110,150,.18)';
+  [-ROOM_X,ROOM_X].forEach(function(sx){
+    line(project(sx,ROOM_Y0,WALL_Z),project(sx,ROOM_Y0,0.9));
+    line(project(sx,ROOM_Y1,WALL_Z),project(sx,ROOM_Y1,0.9));
+  });
+  // 目标（远→近无所谓，同墙；按pulse呼吸）
+  var i,p,pr;
+  for(i=0;i<targets.length;i++){
+    p=project(targets[i].x,targets[i].y,WALL_Z);
+    if(!p)continue;
+    if(p.x<-80||p.x>W+80||p.y<-80||p.y>H+80)continue;
+    pr=targets[i].r*F/p.d;
+    var pulse=1+Math.sin(now/280+targets[i].pulse)*0.03;
+    pr*=pulse;
+    ctx.save();
+    ctx.shadowColor='rgba(34,211,238,.8)';ctx.shadowBlur=22;
+    var rg=ctx.createRadialGradient(p.x-pr*0.25,p.y-pr*0.3,pr*0.1,p.x,p.y,pr);
+    rg.addColorStop(0,'#e8fdff');rg.addColorStop(0.35,'#22d3ee');rg.addColorStop(0.75,'#0e86b8');rg.addColorStop(1,'#075e85');
+    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(p.x,p.y,pr,0,7);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,255,255,.85)';ctx.beginPath();ctx.arc(p.x-pr*0.28,p.y-pr*0.32,pr*0.16,0,7);ctx.fill();
+    ctx.strokeStyle='rgba(220,250,255,.9)';ctx.lineWidth=Math.max(1.5,pr*0.07);ctx.stroke();
+    ctx.restore();
+  }
+  // 命中/未中标记
+  for(i=markers.length-1;i>=0;i--){
+    var m=markers[i];m.life-=dt*4;
+    if(m.life<=0){markers.splice(i,1);continue;}
+    ctx.save();ctx.globalAlpha=Math.max(0,m.life);ctx.lineWidth=3;
+    if(m.hit){ctx.strokeStyle='#fff';var s=14+(1-m.life)*10;
+      ctx.beginPath();
+      ctx.moveTo(m.x-s,m.y-s);ctx.lineTo(m.x-s*0.4,m.y-s*0.4);ctx.moveTo(m.x+s,m.y-s);ctx.lineTo(m.x+s*0.4,m.y-s*0.4);
+      ctx.moveTo(m.x-s,m.y+s);ctx.lineTo(m.x-s*0.4,m.y+s*0.4);ctx.moveTo(m.x+s,m.y+s);ctx.lineTo(m.x+s*0.4,m.y+s*0.4);ctx.stroke();
+    }else{ctx.strokeStyle='#ff4655';ctx.beginPath();ctx.arc(m.x,m.y,10+(1-m.life)*8,0,7);ctx.stroke();}
+    ctx.restore();
+  }
+  // 加分飘字
+  ctx.textAlign='center';ctx.font='bold 20px ui-monospace,monospace';
+  for(i=popups.length-1;i>=0;i--){
+    var q=popups[i];q.life-=dt*1.1;q.y-=dt*46;
+    if(q.life<=0){popups.splice(i,1);continue;}
+    ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,q.life*1.4));
+    ctx.fillStyle='#7df3ff';ctx.fillText(q.txt,q.x,q.y);ctx.restore();
+  }
+  drawGun(now,dt);
+  drawCross(now);
+  if(flashHit>0){ctx.fillStyle='rgba(125,243,255,'+(flashHit*0.06)+')';ctx.fillRect(0,0,W,H);flashHit-=dt*6;}
+  if(flashMiss>0){ctx.strokeStyle='rgba(255,70,85,'+(flashMiss*0.8)+')';ctx.lineWidth=6;ctx.strokeRect(3,3,W-6,H-6);flashMiss-=dt*5;}
+  // 倒计时大数字由DOM层显示；回合剩余低时间警告
+}
+function drawGun(now,dt){
+  recoil=Math.max(0,recoil-dt*7);
+  swayX+=(0-swayX)*Math.min(1,dt*8);swayY+=(0-swayY)*Math.min(1,dt*8);
+  var bx=W*0.66+swayX, by=H+6+swayY+recoil*22, s=Math.min(W,H)/540;
+  ctx.save();ctx.translate(bx,by);ctx.scale(s,s);
+  // 枪身（简约手枪剪影，青蓝描边呼应主题）
+  ctx.fillStyle='#1c2836';ctx.strokeStyle='#3d5a76';ctx.lineWidth=3;
+  ctx.beginPath(); // 套筒
+  ctx.moveTo(-20,-190);ctx.lineTo(70,-190);ctx.lineTo(70,-150);ctx.lineTo(-20,-150);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle='#243448'; // 握把
+  ctx.beginPath();ctx.moveTo(-10,-150);ctx.lineTo(45,-150);ctx.lineTo(30,-60);ctx.lineTo(-25,-60);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle='#0b1420';ctx.fillRect(-2,-186,34,10); // 瞄具槽
+  ctx.fillStyle='#22d3ee';ctx.fillRect(30,-196,6,10); // 准星光点
+  ctx.fillStyle='#0e1722';ctx.fillRect(-14,-140,52,10); // 防滑纹
+  // 枪口火光
+  var since=performance.now()-lastShotT;
+  if(since<80){
+    ctx.save();ctx.translate(25,-205);ctx.rotate(Math.PI/4);
+    ctx.fillStyle='rgba(255,200,60,.9)';ctx.shadowColor='#ffaa22';ctx.shadowBlur=30;
+    var f=26*(1-since/80)+10;
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(f,f*0.28);ctx.lineTo(0,f*0.1);ctx.lineTo(-f,f*0.28);ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+function drawCross(now){
+  var cx=fpsMode?W/2:aimX, cy=fpsMode?H/2:aimY;
+  var gap=10+recoil*10+(flashMiss>0?4:0);
+  ctx.save();
+  ctx.strokeStyle=flashMiss>0?'#ff4655':'#e8feff';ctx.lineWidth=2;
+  ctx.shadowColor='rgba(34,211,238,.9)';ctx.shadowBlur=6;
+  ctx.beginPath();
+  ctx.moveTo(cx-gap-8,cy);ctx.lineTo(cx-gap,cy);ctx.moveTo(cx+gap,cy);ctx.lineTo(cx+gap+8,cy);
+  ctx.moveTo(cx,cy-gap-8);ctx.lineTo(cx,cy-gap);ctx.moveTo(cx,cy+gap);ctx.lineTo(cx,cy+gap+8);
+  ctx.stroke();
+  ctx.fillStyle=flashMiss>0?'#ff4655':'#22d3ee';
+  ctx.beginPath();ctx.arc(cx,cy,2.4,0,7);ctx.fill();
+  ctx.restore();
+}
+
+/* ============ 主循环 ============ */
+var lastF=0,roundStartT=0;
+function loop(now){
+  raf=requestAnimationFrame(loop);
+  var dt=Math.min(0.05,(now-lastF)/1000||0.016);lastF=now;
+  if(phase==='play'){
+    updateHUD(now);
+    if(now>=endAt){endGame();return;}
+  }
+  if(phase==='play'||phase==='pause'||phase==='count'||phase==='lock'||phase==='done')drawScene(now,dt);
+}
+function startRound(key){
+  modeKey=key;phase='lock';
+  targets=[];popups=[];markers=[];score=0;kills=0;shots=0;streak=0;bestStreak=0;ttks=[];precs=[];
+  yaw=0;pitch=0;aimX=W/2;aimY=H/2;flashHit=flashMiss=recoil=0;lastKillT=0;
+  var cfg=MODES[key],i;for(i=0;i<cfg.count;i++)spawnOne();
+  $('hud-mode').textContent=cfg.label;
+  $('view-menu').hidden=true;$('view-game').hidden=false;$('view-result').hidden=true;
+  $('lock-tip').hidden=false;$('count-tip').hidden=true;
+  $('lock-title').textContent='点击锁定鼠标';
+  updateHUD(performance.now()+DUR);
+  drawScene(performance.now(),0.016);
+}
+function beginCount(){
+  phase='count';$('lock-tip').hidden=true;$('count-tip').hidden=false;
+  var n=3;$('count-num').textContent=n;
+  blip(440,440,0.09,'square',0.05);
+  clearInterval(countT);
+  countT=setInterval(function(){
+    n--;
+    if(n<=0){clearInterval(countT);$('count-tip').hidden=true;phase='play';roundStartT=performance.now();lastKillT=0;endAt=performance.now()+DUR;blip(880,1320,0.12,'square',0.06);}
+    else{$('count-num').textContent=n;blip(440,440,0.09,'square',0.05);}
+  },600);
+}
+function lockPointer(){
+  fpsMode=true;
+  try{
+    var p=cv.requestPointerLock&&cv.requestPointerLock();
+    if(p&&p.catch)p.catch(function(){fallbackMode();});
+    setTimeout(function(){if(phase==='lock'&&document.pointerLockElement!==cv&&fpsMode)fallbackCheck();},600);
+  }catch(e){fallbackMode();}
+}
+function fallbackCheck(){if(document.pointerLockElement!==cv)fallbackMode();}
+function fallbackMode(){
+  if(phase!=='lock')return;
+  fpsMode=false;beginCount();
+}
+function endGame(){
+  phase='done';clearInterval(countT);
+  try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}
+  var avg=ttks.length?Math.round(ttks.reduce(function(a,b){return a+b;},0)/ttks.length):0;
+  var fast=ttks.length?Math.round(Math.min.apply(null,ttks)):0;
+  var ap=precs.length?precs.reduce(function(a,b){return a+b;},0)/precs.length*100:0;
+  var s=store[modeKey],rec=false;
+  if(score>s.best){s.best=score;rec=true;}
+  s.plays++;saveStore();refreshBest();
+  $('res-title').childNodes[0].textContent=MODES[modeKey].label+' ';
+  $('res-score').textContent=score.toLocaleString();
+  $('res-sub').textContent='60 秒 · '+MODES[modeKey].label+' · '+kills+' 杀 · '+shots+' 枪';
+  $('res-kills').textContent=kills;
+  $('res-acc').textContent=acc().toFixed(1)+'%  ('+kills+'/'+shots+')';
+  $('res-avg').textContent=ttks.length?avg+' ms':'—';
+  $('res-fast').textContent=ttks.length?fast+' ms':'—';
+  $('res-prec').textContent=precs.length?ap.toFixed(1)+'%':'—';
+  $('res-streak').textContent='×'+bestStreak;
+  $('rec-score').innerHTML=rec&&score>0?'<span class="newrec">NEW BEST</span>':'';
+  var counts=BUCKETS.map(function(){return 0;}),i;
+  ttks.forEach(function(ms){for(var j=0;j<BUCKETS.length;j++)if(ms>=BUCKETS[j].a&&ms<BUCKETS[j].b){counts[j]++;break;}});
+  var mx=Math.max.apply(null,counts.concat([1])),html='';
+  for(i=0;i<BUCKETS.length;i++){var h=Math.max(3,Math.round(counts[i]/mx*72));
+    html+='<div class="bar"><b>'+counts[i]+'</b><i style="height:'+h+'px"></i><span>'+BUCKETS[i].l+'</span></div>';}
+  $('hist').innerHTML=html;
+  $('view-result').hidden=false;
+}
+function quitToMenu(){
+  phase='menu';clearInterval(countT);cancelAnimationFrame(raf);
+  try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}
+  $('view-menu').hidden=false;$('view-game').hidden=true;$('view-result').hidden=true;
+  raf=requestAnimationFrame(loop);
+}
+
+/* ============ 输入 ============ */
+document.addEventListener('pointerlockchange',function(){
+  var locked=document.pointerLockElement===cv;
+  if(locked){if(phase==='lock')beginCount();else if(phase==='pause'){endAt+=performance.now()-pauseStart;phase='play';$('lock-tip').hidden=true;}}
+  else{
+    if(phase==='count'){clearInterval(countT);phase='pause';pauseStart=performance.now();$('count-tip').hidden=true;showPause('暂停 · 点击继续');}
+    else if(phase==='play'){phase='pause';pauseStart=performance.now();showPause('已暂停 · 点击继续（灵敏度 '+store.sens.toFixed(1)+'）');}
+  }
+});
+document.addEventListener('pointerlockerror',function(){fallbackMode();});
+function showPause(t){
+  $('lock-tip').hidden=false;$('lock-title').textContent=t;
+  $('lock-sub').innerHTML='计时已冻结 · 点击重新锁定继续';
+}
+document.addEventListener('mousemove',function(e){
+  if(phase!=='play'&&phase!=='count')return;
+  if(document.pointerLockElement===cv){
+    var k=store.sens*0.0022;
+    yaw-=e.movementX*k;pitch-=e.movementY*k;
+    yaw=Math.max(-1.1,Math.min(1.1,yaw));pitch=Math.max(-0.6,Math.min(0.6,pitch));
+    swayX=Math.max(-26,Math.min(26,swayX-e.movementX*0.03));
+    swayY=Math.max(-18,Math.min(18,swayY+e.movementY*0.02));
+  }else if(!fpsMode){
+    var r=cv.getBoundingClientRect();
+    aimX=(e.clientX-r.left)/r.width*W;aimY=(e.clientY-r.top)/r.height*H;
+    aimX=Math.max(0,Math.min(W,aimX));aimY=Math.max(0,Math.min(H,aimY));
+  }
+});
+cv.addEventListener('mousedown',function(e){
+  if(e.button!==0)return;
+  if(phase==='lock'||phase==='pause'){lockPointer();if(!fpsMode&&phase==='lock')beginCount();return;}
+  if(phase==='play'){e.preventDefault();shoot();}
+});
+$('btn-lock').addEventListener('click',function(){lockPointer();if(!fpsMode)beginCount();});
+cv.addEventListener('contextmenu',function(e){e.preventDefault();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&phase==='done')quitToMenu();});
+$('btn-gridshot').addEventListener('click',function(){startRound('gridshot');});
+$('btn-sixshot').addEventListener('click',function(){startRound('sixshot');});
+$('btn-retry').addEventListener('click',function(){startRound(modeKey);});
+$('btn-back').addEventListener('click',quitToMenu);
+$('btn-quit').addEventListener('click',quitToMenu);
+sensInput.addEventListener('input',function(){
+  store.sens=parseFloat(sensInput.value)||1;saveStore();refreshBest();
+});
+$('btn-snd').addEventListener('click',function(){store.sound=!store.sound;saveStore();refreshBest();});
+
+/* ============ 启动 ============ */
+loadStore();refreshBest();
+$('view-menu').hidden=false;$('view-game').hidden=true;$('view-result').hidden=true;
+raf=requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "AimLab Trainer",
+  "category": "Games",
+  "description": "3D FPS瞄准训练 · Gridshot/Sixshot · 持枪视角 · 可调灵敏度 · AimLab计分复刻",
+  "entry": "project/index.html"
+}

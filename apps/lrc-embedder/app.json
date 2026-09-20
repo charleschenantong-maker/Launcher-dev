@@ -1,0 +1,7 @@
+{
+  "name": "LRC 歌词嵌入",
+  "category": "Tools",
+  "description": "MP3 / FLAC 批量匹配歌词并嵌入标签 · 本地处理",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

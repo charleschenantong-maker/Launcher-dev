@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF 合并</title>
+  <script src="vendor/pdf-lib.min.js"></script>
+<style>html,body{margin:0;padding:0;min-height:100%;height:100%}body{background:#0f1115}</style>
+</head>
+<body>
+<div id="panel-merger" class="tool-panel active" data-display="flex" style="display:flex">
+      <style>
+        #panel-merger{
+          --bg:#0f1115; --panel:#171a21; --line:#2a2f3a;
+          --text:#e8eaed; --sub:#8b93a3; --accent:#5eead4; --accent2:#f97373;
+          background:var(--bg); color:var(--text);
+          display:flex; justify-content:center; padding:40px 16px;
+        }
+        #panel-merger .wrap{width:100%; max-width:640px}
+        #panel-merger h1{font-size:22px; font-weight:700; margin:0 0 4px}
+        #panel-merger .sub{color:var(--sub); font-size:13px; margin:0 0 24px}
+
+        #panel-merger #drop{
+          border:2px dashed var(--line); border-radius:14px; padding:32px 16px;
+          text-align:center; cursor:pointer; transition:.15s;
+        }
+        #panel-merger #drop.over{border-color:var(--accent); background:#152321}
+        #panel-merger #drop p{margin:0; color:var(--sub); font-size:14px}
+        #panel-merger #drop strong{color:var(--text)}
+        #panel-merger input[type=file]{display:none}
+
+        #panel-merger #list{list-style:none; margin:20px 0 0; padding:0; display:flex; flex-direction:column; gap:8px}
+        #panel-merger #list li{
+          display:flex; align-items:center; gap:10px;
+          background:var(--panel); border:1px solid var(--line); border-radius:10px;
+          padding:10px 12px; cursor:grab; font-size:14px;
+        }
+        #panel-merger #list li.dragging{opacity:.4}
+        #panel-merger #list li .idx{color:var(--sub); font-variant-numeric:tabular-nums; width:18px}
+        #panel-merger #list li .name{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+        #panel-merger #list li .pages{color:var(--sub); font-size:12px}
+        #panel-merger #list li button{
+          background:none; border:none; color:var(--accent2); cursor:pointer;
+          font-size:16px; line-height:1; padding:2px 4px;
+        }
+
+        #panel-merger .actions{display:flex; gap:10px; margin-top:20px}
+        #panel-merger button.main{
+          flex:1; background:var(--accent); color:#0f1115; border:none; border-radius:10px;
+          padding:12px; font-size:15px; font-weight:700; cursor:pointer;
+        }
+        #panel-merger button.main:disabled{opacity:.35; cursor:not-allowed}
+        #panel-merger button.ghost{
+          background:none; border:1px solid var(--line); color:var(--sub); border-radius:10px;
+          padding:12px 16px; font-size:14px; cursor:pointer;
+        }
+        #panel-merger #status{margin-top:12px; font-size:13px; color:var(--sub); min-height:18px}
+        #panel-merger #status.err{color:var(--accent2)}
+        #panel-merger #status.ok{color:var(--accent)}
+      </style>
+
+      <div class="wrap">
+        <h1>PDF 合并</h1>
+        <p class="sub">选好文件，拖动排序，一键合并成一个 PDF。全程本地处理，不上传服务器。</p>
+
+        <div id="drop">
+          <p><strong>点击选择</strong> 或拖拽 PDF 文件到这里</p>
+        </div>
+        <input type="file" id="fileInput" accept="application/pdf" multiple>
+
+        <ul id="list"></ul>
+
+        <div class="actions">
+          <button class="ghost" id="clearBtn" style="display:none">清空</button>
+          <button class="main" id="mergeBtn" disabled>合并并下载</button>
+        </div>
+        <div id="status"></div>
+      </div>
+    </div>
+<script>
+/* ══════════════════════ TOOL 1 SCRIPT: PDF MERGER ══════════════════════ */
+(function(){
+const { PDFDocument } = PDFLib;
+
+let files = []; // {id, file, name, pages}
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('fileInput');
+const listEl = document.getElementById('list');
+const mergeBtn = document.getElementById('mergeBtn');
+const clearBtn = document.getElementById('clearBtn');
+const statusEl = document.getElementById('status');
+
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+async function handleFiles(fileList) {
+  setStatus('');
+  for (const f of fileList) {
+    if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) continue;
+    try {
+      const buf = await f.arrayBuffer();
+      const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+      files.push({
+        id: crypto.randomUUID(),
+        file: f,
+        buf,
+        name: f.name,
+        pages: doc.getPageCount()
+      });
+    } catch (err) {
+      setStatus(`"${f.name}" 打不开，可能是加密或损坏的文件，已跳过。`, 'err');
+    }
+  }
+  render();
+}
+
+function render() {
+  listEl.innerHTML = '';
+  files.forEach((f, i) => {
+    const li = document.createElement('li');
+    li.draggable = true;
+    li.dataset.id = f.id;
+    li.innerHTML = `
+      <span class="idx">${i + 1}</span>
+      <span class="name">${f.name}</span>
+      <span class="pages">${f.pages}页</span>
+      <button data-id="${f.id}" title="移除">✕</button>
+    `;
+    li.addEventListener('dragstart', () => li.classList.add('dragging'));
+    li.addEventListener('dragend', () => { li.classList.remove('dragging'); reorderFromDOM(); });
+    listEl.appendChild(li);
+  });
+
+  listEl.addEventListener('dragover', e => {
+    e.preventDefault();
+    const dragging = listEl.querySelector('.dragging');
+    if (!dragging) return;
+    const after = getDragAfterElement(listEl, e.clientY);
+    if (after == null) listEl.appendChild(dragging);
+    else listEl.insertBefore(dragging, after);
+  });
+
+  listEl.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      files = files.filter(f => f.id !== btn.dataset.id);
+      render();
+    });
+  });
+
+  mergeBtn.disabled = files.length < 2;
+  clearBtn.style.display = files.length ? 'inline-block' : 'none';
+}
+
+function getDragAfterElement(container, y) {
+  const els = [...container.querySelectorAll('li:not(.dragging)')];
+  return els.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) return { offset, element: child };
+    return closest;
+  }, { offset: -Infinity }).element;
+}
+
+function reorderFromDOM() {
+  const ids = [...listEl.querySelectorAll('li')].map(li => li.dataset.id);
+  files = ids.map(id => files.find(f => f.id === id));
+  render();
+}
+
+clearBtn.addEventListener('click', () => { files = []; render(); setStatus(''); });
+
+mergeBtn.addEventListener('click', async () => {
+  if (files.length < 2) return;
+  setStatus('合并中…');
+  mergeBtn.disabled = true;
+  try {
+    const merged = await PDFDocument.create();
+    for (const f of files) {
+      const src = await PDFDocument.load(f.buf, { ignoreEncryption: true });
+      const copiedPages = await merged.copyPages(src, src.getPageIndices());
+      copiedPages.forEach(p => merged.addPage(p));
+    }
+    const bytes = await merged.save();
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'merged.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus(`搞定！合并了 ${files.length} 个文件，共 ${files.reduce((s,f)=>s+f.pages,0)} 页。`, 'ok');
+  } catch (err) {
+    setStatus('合并失败：' + err.message, 'err');
+  } finally {
+    mergeBtn.disabled = files.length < 2;
+  }
+});
+
+function setStatus(msg, type) {
+  statusEl.textContent = msg;
+  statusEl.className = type || '';
+}
+})();
+</script>
+</body>
+</html>

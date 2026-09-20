@@ -1,0 +1,7 @@
+{
+  "name": "Media Player",
+  "category": "Tools",
+  "description": "本地视频播放器 · 播放列表、截图与音轨切换",
+  "entry": "project/index.html",
+  "cover": "cover.svg"
+}

@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@source "./upstream";
+@custom-variant dark (&:where(.dark, .dark *));
+@theme { --font-sans: Inter, ui-sans-serif, system-ui, sans-serif; }
+@font-face { font-family: Inter; src: url('/images/Inter-400.ttf'); font-weight: 400; }
+@font-face { font-family: Inter; src: url('/images/Inter-500.ttf'); font-weight: 500; }
+@font-face { font-family: Inter; src: url('/images/Inter-600.ttf'); font-weight: 600; }
+@font-face { font-family: Inter; src: url('/images/Inter-700.ttf'); font-weight: 700; }
+@font-face { font-family: Inter; src: url('/images/Inter-800.ttf'); font-weight: 800; }
+:root { font-family: Inter, sans-serif; color: #202024; background: #fafafa; color-scheme: light; --palette-purple: #7160b7; }
+:root.dark { color: #eee; background: #131316; color-scheme: dark; }
+body { margin: 0 auto; max-width: 740px; padding: 40px 35px; }
+.gallery-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.gallery-heading p { font-size: 10px; letter-spacing: .16em; opacity: .5; }
+.gallery-heading h1 { font-size: 40px; font-weight: 600; letter-spacing: -1.6px; }
+.gallery-heading button { cursor: pointer; padding: 10px 16px; border-radius: 24px; background: #8882; font-size: 12px; }
+nav { display: flex; flex-wrap: wrap; gap: 12px 18px; margin-top: 28px; font-size: 12px; opacity: .7; }
+nav a:hover { text-decoration: underline; }
+section { margin: 70px 0; scroll-margin-top: 24px; }
+main>section>h2 { font-size: 24px; font-weight: 600; letter-spacing: -.5px; margin-bottom: 24px; }
+#surface-equations h3 { font-size: 13px; margin-bottom: 12px; }
+.caption, footer { font-size: 11px; opacity: .6; margin-top: 20px; line-height: 1.7; }
+button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 2px solid #007aff; outline-offset: 4px; }

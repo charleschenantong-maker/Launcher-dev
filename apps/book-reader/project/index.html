@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>书本阅读器</title>
+<style>html,body{margin:0;padding:0;min-height:100%;height:100%}body{background:#0f0f13}</style>
+</head>
+<body>
+<div id="panel-reader" class="tool-panel" data-display="flex" style="display:flex">
+      <style>
+        #panel-reader{
+          --r-bg: #0f0f13;
+          --r-surface: #18181f;
+          --r-border: #2a2a38;
+          --r-accent: #7c6ef5;
+          --r-accent-dim: #3d3570;
+          --r-text: #d8d8e8;
+          --r-text-dim: #6b6b85;
+          --r-highlight: #f5c842;
+          --r-highlight-current: #ff7b54;
+          --r-radius: 10px;
+          --r-font-mono: 'Courier New', Courier, monospace;
+          --r-font-body: 'Georgia', serif;
+
+          background: var(--r-bg);
+          color: var(--r-text);
+          font-family: var(--r-font-body);
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        #panel-reader #topbar {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 16px;
+          background: var(--r-surface);
+          border-bottom: 1px solid var(--r-border);
+          flex-shrink: 0;
+        }
+
+        #panel-reader #topbar h1 {
+          font-size: 14px;
+          font-family: var(--r-font-mono);
+          color: var(--r-accent);
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          margin-right: 6px;
+          white-space: nowrap;
+        }
+
+        #panel-reader #file-label {
+          cursor: pointer;
+          background: var(--r-accent-dim);
+          color: var(--r-accent);
+          border: 1px solid var(--r-accent);
+          border-radius: var(--r-radius);
+          padding: 5px 12px;
+          font-size: 13px;
+          font-family: var(--r-font-mono);
+          white-space: nowrap;
+          transition: background 0.15s;
+        }
+        #panel-reader #file-label:hover { background: var(--r-accent); color: #fff; }
+        #panel-reader #file-input { display: none; }
+
+        #panel-reader #filename {
+          font-size: 12px;
+          color: var(--r-text-dim);
+          font-family: var(--r-font-mono);
+          max-width: 160px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        #panel-reader .sep { flex: 1; }
+
+        #panel-reader #search-wrap {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: var(--r-bg);
+          border: 1px solid var(--r-border);
+          border-radius: var(--r-radius);
+          padding: 4px 10px;
+          flex: 0 1 320px;
+        }
+        #panel-reader #search-wrap:focus-within { border-color: var(--r-accent); }
+
+        #panel-reader #search-input {
+          background: transparent;
+          border: none;
+          outline: none;
+          color: var(--r-text);
+          font-size: 14px;
+          font-family: var(--r-font-mono);
+          width: 100%;
+        }
+        #panel-reader #search-input::placeholder { color: var(--r-text-dim); }
+
+        #panel-reader #match-count {
+          font-size: 11px;
+          color: var(--r-text-dim);
+          font-family: var(--r-font-mono);
+          white-space: nowrap;
+          min-width: 52px;
+          text-align: right;
+        }
+
+        #panel-reader .nav-btn {
+          background: none;
+          border: none;
+          color: var(--r-text-dim);
+          cursor: pointer;
+          font-size: 16px;
+          padding: 0 2px;
+          transition: color 0.15s;
+          line-height: 1;
+        }
+        #panel-reader .nav-btn:hover { color: var(--r-accent); }
+        #panel-reader .nav-btn:disabled { opacity: 0.25; cursor: default; }
+
+        #panel-reader #case-btn {
+          background: none;
+          border: 1px solid var(--r-border);
+          border-radius: 5px;
+          color: var(--r-text-dim);
+          cursor: pointer;
+          font-size: 11px;
+          padding: 2px 6px;
+          font-family: var(--r-font-mono);
+          transition: all 0.15s;
+        }
+        #panel-reader #case-btn.active { border-color: var(--r-accent); color: var(--r-accent); }
+
+        #panel-reader #content-area {
+          flex: 1;
+          overflow-y: auto;
+          padding: 32px 48px;
+          line-height: 1.9;
+          font-size: 16px;
+          scroll-behavior: smooth;
+        }
+
+        @media (max-width: 700px) {
+          #panel-reader #content-area { padding: 20px 18px; font-size: 15px; }
+        }
+
+        #panel-reader #content-area::-webkit-scrollbar { width: 6px; }
+        #panel-reader #content-area::-webkit-scrollbar-track { background: transparent; }
+        #panel-reader #content-area::-webkit-scrollbar-thumb { background: var(--r-border); border-radius: 3px; }
+        #panel-reader #content-area::-webkit-scrollbar-thumb:hover { background: var(--r-accent-dim); }
+
+        #panel-reader #book-text { max-width: 720px; margin: 0 auto; white-space: pre-wrap; word-break: break-word; }
+
+        #panel-reader #placeholder {
+          max-width: 420px;
+          margin: 80px auto;
+          text-align: center;
+          color: var(--r-text-dim);
+        }
+        #panel-reader #placeholder .icon { font-size: 52px; margin-bottom: 16px; }
+        #panel-reader #placeholder h2 { font-size: 18px; color: var(--r-text); margin-bottom: 8px; font-family: var(--r-font-mono); }
+        #panel-reader #placeholder p { font-size: 13px; line-height: 1.7; }
+
+        #panel-reader mark {
+          background: var(--r-highlight);
+          color: #111;
+          border-radius: 2px;
+          padding: 0 1px;
+        }
+        #panel-reader mark.current {
+          background: var(--r-highlight-current);
+          color: #fff;
+          border-radius: 2px;
+          outline: 2px solid #fff4;
+        }
+
+        #panel-reader #statusbar {
+          padding: 4px 16px;
+          background: var(--r-surface);
+          border-top: 1px solid var(--r-border);
+          font-size: 11px;
+          color: var(--r-text-dim);
+          font-family: var(--r-font-mono);
+          display: flex;
+          gap: 18px;
+          flex-shrink: 0;
+        }
+      </style>
+
+      <div id="topbar">
+        <h1>📖 Reader</h1>
+        <label id="file-label" for="file-input">打开 .txt</label>
+        <input type="file" id="file-input" accept=".txt">
+        <span id="filename">未加载文件</span>
+        <div class="sep"></div>
+
+        <div id="search-wrap">
+          <input id="search-input" placeholder="搜索关键词…" autocomplete="off" spellcheck="false">
+          <span id="match-count"></span>
+          <button class="nav-btn" id="prev-btn" title="上一个 (Shift+Enter)" disabled>▲</button>
+          <button class="nav-btn" id="next-btn" title="下一个 (Enter)" disabled>▼</button>
+          <button id="case-btn" title="区分大小写">Aa</button>
+        </div>
+      </div>
+
+      <div id="content-area">
+        <div id="placeholder">
+          <div class="icon">📚</div>
+          <h2>加载一本书</h2>
+          <p>点击左上角「打开 .txt」选择文本文件，然后在搜索框输入关键词即可跳转定位。</p>
+        </div>
+        <div id="book-text" style="display:none"></div>
+      </div>
+
+      <div id="statusbar">
+        <span id="stat-chars">字符：—</span>
+        <span id="stat-lines">行数：—</span>
+        <span id="stat-pos">位置：—</span>
+      </div>
+    </div>
+<script>
+/* ══════════════════════ TOOL 2 SCRIPT: BOOK READER ══════════════════════ */
+(function(){
+  const fileInput    = document.getElementById('file-input');
+  const filename     = document.getElementById('filename');
+  const searchInput  = document.getElementById('search-input');
+  const matchCount   = document.getElementById('match-count');
+  const prevBtn      = document.getElementById('prev-btn');
+  const nextBtn      = document.getElementById('next-btn');
+  const caseBtn      = document.getElementById('case-btn');
+  const contentArea  = document.getElementById('content-area');
+  const bookText     = document.getElementById('book-text');
+  const placeholder  = document.getElementById('placeholder');
+  const statChars    = document.getElementById('stat-chars');
+  const statLines    = document.getElementById('stat-lines');
+  const statPos      = document.getElementById('stat-pos');
+
+  let rawText     = '';
+  let matches     = [];
+  let currentIdx  = -1;
+  let caseSensitive = false;
+
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      rawText = ev.target.result;
+      filename.textContent = file.name;
+      placeholder.style.display = 'none';
+      bookText.style.display = 'block';
+      renderText(rawText);
+      statChars.textContent = `字符：${rawText.length.toLocaleString()}`;
+      statLines.textContent = `行数：${rawText.split('\n').length.toLocaleString()}`;
+      if (searchInput.value.trim()) doSearch();
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+
+  function escapeHTML(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderText(text) {
+    bookText.innerHTML = escapeHTML(text);
+    matches = [];
+    currentIdx = -1;
+    updateUI();
+  }
+
+  function doSearch() {
+    const query = searchInput.value;
+    if (!rawText || !query) {
+      renderText(rawText);
+      matchCount.textContent = '';
+      return;
+    }
+
+    const flags   = caseSensitive ? 'g' : 'gi';
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex   = new RegExp(escaped, flags);
+
+    const raw   = rawText;
+    let html    = '';
+    let last    = 0;
+    let m;
+    matches = [];
+
+    regex.lastIndex = 0;
+    while ((m = regex.exec(raw)) !== null) {
+      matches.push(m.index);
+      html += escapeHTML(raw.slice(last, m.index));
+      html += `<mark data-idx="${matches.length - 1}">${escapeHTML(m[0])}</mark>`;
+      last = m.index + m[0].length;
+    }
+    html += escapeHTML(raw.slice(last));
+    bookText.innerHTML = html;
+
+    currentIdx = matches.length > 0 ? 0 : -1;
+    updateUI();
+    if (currentIdx >= 0) scrollToCurrent();
+  }
+
+  function updateUI() {
+    const total = matches.length;
+    if (!searchInput.value.trim() || !rawText) {
+      matchCount.textContent = '';
+      prevBtn.disabled = true;
+      nextBtn.disabled = true;
+      return;
+    }
+    matchCount.textContent = total ? `${currentIdx + 1}/${total}` : '无结果';
+    prevBtn.disabled = total === 0;
+    nextBtn.disabled = total === 0;
+
+    document.querySelectorAll('#panel-reader mark').forEach((el, i) => {
+      el.classList.toggle('current', i === currentIdx);
+    });
+  }
+
+  function scrollToCurrent() {
+    const el = document.querySelector(`#panel-reader mark[data-idx="${currentIdx}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    const charPos = matches[currentIdx];
+    const lineNo  = rawText.slice(0, charPos).split('\n').length;
+    statPos.textContent = `位置：第 ${lineNo} 行 / 字符 ${charPos.toLocaleString()}`;
+  }
+
+  function goNext() {
+    if (!matches.length) return;
+    currentIdx = (currentIdx + 1) % matches.length;
+    updateUI();
+    scrollToCurrent();
+  }
+
+  function goPrev() {
+    if (!matches.length) return;
+    currentIdx = (currentIdx - 1 + matches.length) % matches.length;
+    updateUI();
+    scrollToCurrent();
+  }
+
+  let searchTimer;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(doSearch, 200);
+  });
+
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.shiftKey ? goPrev() : goNext();
+    }
+    if (e.key === 'Escape') searchInput.blur();
+  });
+
+  nextBtn.addEventListener('click', goNext);
+  prevBtn.addEventListener('click', goPrev);
+
+  caseBtn.addEventListener('click', () => {
+    caseSensitive = !caseSensitive;
+    caseBtn.classList.toggle('active', caseSensitive);
+    if (searchInput.value) doSearch();
+  });
+
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      // Only hijack Ctrl/Cmd+F when the reader tab is active
+      if (!document.getElementById('panel-reader').classList.contains('active')) return;
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  });
+
+  document.body.addEventListener('dragover', e => e.preventDefault());
+  document.body.addEventListener('drop', e => {
+    if (!document.getElementById('panel-reader').classList.contains('active')) return;
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.name.endsWith('.txt')) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      rawText = ev.target.result;
+      filename.textContent = file.name;
+      placeholder.style.display = 'none';
+      bookText.style.display = 'block';
+      renderText(rawText);
+      statChars.textContent = `字符：${rawText.length.toLocaleString()}`;
+      statLines.textContent = `行数：${rawText.split('\n').length.toLocaleString()}`;
+      if (searchInput.value.trim()) doSearch();
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+})();
+</script>
+</body>
+</html>
